@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => boolean;
   logout: () => void;
+  updateUser: (data: Partial<User>) => void;
   loading: boolean;
 }
 
@@ -64,8 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('kkp_auth_role');
   };
 
+  const updateUser = (data: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      return { ...prev, ...data };
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,6 +15,7 @@ import {
   fetchFinancialData,
   type FinancialData,
 } from '../services/analyticsService';
+import { useLanguage } from '../context/LanguageContext';
 
 const { Title, Text } = Typography;
 
@@ -83,6 +84,7 @@ const driverColumns = [
 ];
 
 export default function FinancialAnalytics() {
+  const { t } = useLanguage();
   const [data, setData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -121,7 +123,7 @@ export default function FinancialAnalytics() {
             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #CA9D50, #E8B86D)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FundOutlined style={{ color: '#fff', fontSize: 18 }} />
             </div>
-            <Title level={4} style={{ margin: 0, color: '#101828' }}>Financial & Revenue Analytics</Title>
+            <Title level={4} style={{ margin: 0, color: '#101828' }}>{t('analytics.financial')}</Title>
           </div>
           <Text style={{ color: '#667085', fontSize: 14 }}>
             Real-time financial visibility · Super Admin only · Last: {lastRefresh.toLocaleTimeString()}

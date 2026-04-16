@@ -15,6 +15,7 @@ import {
   fetchLoadData,
   type LoadData,
 } from '../services/analyticsService';
+import { useLanguage } from '../context/LanguageContext';
 
 const { Title, Text } = Typography;
 
@@ -70,6 +71,7 @@ function FunnelStep({ stage, count, pct, color, isLast }: {
 const FUNNEL_COLORS = ['#1A237E', '#283593', '#3949AB', '#5C6BC0', '#10B981'];
 
 export default function LoadAnalytics() {
+  const { t } = useLanguage();
   const [data, setData] = useState<LoadData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -100,7 +102,7 @@ export default function LoadAnalytics() {
             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #1A237E, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <BarChartOutlined style={{ color: '#fff', fontSize: 18 }} />
             </div>
-            <Title level={4} style={{ margin: 0, color: '#101828' }}>Load Management Analytics</Title>
+            <Title level={4} style={{ margin: 0, color: '#101828' }}>{t('analytics.load')}</Title>
           </div>
           <Text style={{ color: '#667085', fontSize: 14 }}>
             Load lifecycle efficiency · Admin + Super Admin · Last: {lastRefresh.toLocaleTimeString()}

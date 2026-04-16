@@ -14,6 +14,7 @@ import {
   fetchPredictiveData,
   type PredictiveData,
 } from '../services/analyticsService';
+import { useLanguage } from '../context/LanguageContext';
 
 const { Title, Text } = Typography;
 
@@ -86,6 +87,7 @@ function AvailabilityHeatmap({ zones }: { zones: PredictiveData['driverZones'] }
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PredictiveAnalytics() {
+  const { t } = useLanguage();
   const [data, setData] = useState<PredictiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -116,7 +118,7 @@ export default function PredictiveAnalytics() {
             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #1A237E, #283593)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <LineChartOutlined style={{ color: '#fff', fontSize: 18 }} />
             </div>
-            <Title level={4} style={{ margin: 0, color: '#101828' }}>Predictive Analytics</Title>
+            <Title level={4} style={{ margin: 0, color: '#101828' }}>{t('analytics.predictive')}</Title>
           </div>
           <Text style={{ color: '#667085', fontSize: 14 }}>
             Future operational intelligence · Auto-refreshes every 60s · Last: {lastRefresh.toLocaleTimeString()}

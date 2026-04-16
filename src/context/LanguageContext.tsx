@@ -23,6 +23,29 @@ const translations: Record<string, Record<Language, string>> = {
   'header.settings': { en: 'Settings', ta: 'அமைப்புகள்' },
   'header.logout': { en: 'Logout', ta: 'வெளியேறு' },
 
+  // Profile Page
+  'profile.subtitle': { en: 'Manage your personal information and account details', ta: 'உங்கள் தனிப்பட்ட தகவல் மற்றும் கணக்கு விவரங்களை நிர்வகிக்கவும்' },
+  'profile.edit': { en: 'Edit Profile', ta: 'சுயவிவரத்தைத் திருத்து' },
+  'profile.persInfo': { en: 'Personal Information', ta: 'தனிப்பட்ட தகவல்' },
+  'profile.email': { en: 'Email', ta: 'மின்னஞ்சல்' },
+  'profile.phone': { en: 'Phone', ta: 'தொலைபேசி' },
+  'profile.role': { en: 'Role', ta: 'பங்கு' },
+  'profile.accStatus': { en: 'Account Status', ta: 'கணக்கு நிலை' },
+  'profile.active': { en: 'Active', ta: 'செயலில்' },
+
+  // Settings Page
+  'settings.subtitle': { en: 'Configure your application preferences', ta: 'உங்கள் பயன்பாட்டு விருப்பங்களை உள்ளமைக்கவும்' },
+  'settings.language': { en: 'Language', ta: 'மொழி' },
+  'settings.languageDesc': { en: 'Choose your preferred language for the dashboard', ta: 'டாஷ்போர்டுக்கான உங்கள் விருப்ப மொழியைத் தேர்ந்தெடுக்கவும்' },
+  'settings.pushNotifications': { en: 'Push Notifications', ta: 'புஷ் அறிவிப்புகள்' },
+  'settings.pushNotificationsDesc': { en: 'Receive alerts for new bids and load updates', ta: 'புதிய ஏலங்கள் மற்றும் சுமை புதுப்பிப்புகளுக்கான விழிப்பூட்டல்களைப் பெறவும்' },
+  'settings.darkMode': { en: 'Dark Mode', ta: 'டார்க் மோட்' },
+  'settings.darkModeDesc': { en: 'Switch between light and dark themes (Coming soon)', ta: 'லைட் மற்றும் டார்க் மோடுகளுக்கு இடையே மாறுக (விரைவில்)' },
+  'settings.security': { en: 'Security', ta: 'பாதுகாப்பு' },
+  'settings.password': { en: 'Password', ta: 'கடவுச்சொல்' },
+  'settings.passwordDesc': { en: 'Update your account password', ta: 'உங்கள் கணக்கு கடவுச்சொல்லைப் புதுப்பிக்கவும்' },
+  'settings.changePassword': { en: 'Change Password', ta: 'கடவுச்சொல்லை மாற்று' },
+
   // Dashboard
   'dashboard.title': { en: 'Operational Dashboard', ta: 'செயல்பாட்டு டாஷ்போர்டு' },
   'dashboard.subtitle': { en: 'Real-time logistics performance and asset tracking', ta: 'நிகழ்நேர லாஜிஸ்டிக்ஸ் செயல்திறன் மற்றும் சொத்து கண்காணிப்பு' },
@@ -38,6 +61,11 @@ const translations: Record<string, Record<Language, string>> = {
   'dashboard.postLoad': { en: 'Post Load', ta: 'சுமை பதிவு' },
   'dashboard.pendingBids': { en: 'Pending Bids', ta: 'நிலுவை ஏலங்கள்' },
   'dashboard.approveDrivers': { en: 'Approve Drivers', ta: 'ஓட்டுநர்களை ஒப்புதல்' },
+
+  // Analytics
+  'analytics.load': { en: 'Load Analytics', ta: 'சுமை பகுப்பாய்வு' },
+  'analytics.predictive': { en: 'Predictive Analytics', ta: 'முன்கணிப்பு பகுப்பாய்வு' },
+  'analytics.financial': { en: 'Financial Analytics', ta: 'நிதிப் பகுப்பாய்வு' },
 
   // Load Management
   'loads.title': { en: 'Load Management', ta: 'சுமை மேலாண்மை' },

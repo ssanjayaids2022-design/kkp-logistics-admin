@@ -58,14 +58,14 @@ export default function AppLayout() {
       adminItems.push({
         key: '/analytics/loads',
         icon: <BarChartOutlined />,
-        label: 'Load Analytics',
+        label: t('analytics.load'),
       });
     }
 
     if (isSuperAdmin) {
       adminItems.push(
-        { key: '/analytics/predictive', icon: <LineChartOutlined />, label: 'Predictive Analytics' },
-        { key: '/analytics/financial', icon: <FundOutlined />, label: 'Financial Analytics' }
+        { key: '/analytics/predictive', icon: <LineChartOutlined />, label: t('analytics.predictive') },
+        { key: '/analytics/financial', icon: <FundOutlined />, label: t('analytics.financial') }
       );
     }
 
@@ -85,7 +85,13 @@ export default function AppLayout() {
   ], [t]);
 
   const handleUserMenu = ({ key }: { key: string }) => {
-    if (key === 'logout') logout();
+    if (key === 'logout') {
+      logout();
+    } else if (key === 'profile') {
+      navigate('/profile');
+    } else if (key === 'settings') {
+      navigate('/settings');
+    }
   };
 
   const languageMenuItems = useMemo(() => [

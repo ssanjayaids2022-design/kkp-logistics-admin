@@ -11,6 +11,8 @@ import LoadPostingScreen from './pages/LoadPostingScreen';
 import BidComparisonScreen from './pages/BidComparisonScreen';
 import DriverApprovalScreen from './pages/DriverApprovalScreen';
 import PaymentListScreen from './pages/PaymentListScreen';
+import ProfileScreen from './pages/ProfileScreen';
+import SettingsScreen from './pages/SettingsScreen';
 import { LoadsProvider } from './context/LoadsContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -77,6 +79,8 @@ function AppRoutes() {
         <Route path="bids" element={<BidComparisonScreen />} />
         <Route path="drivers" element={<DriverApprovalScreen />} />
         <Route path="payments" element={<PaymentListScreen />} />
+        <Route path="profile" element={<ProfileScreen />} />
+        <Route path="settings" element={<SettingsScreen />} />
 
         {/* ── Analytics Routes (lazy loaded) ── */}
         <Route
