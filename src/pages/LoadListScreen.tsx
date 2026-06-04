@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Input, Select, DatePicker, Button, Space, Tag, Dropdown, Row, Col } from 'antd';
+import { Table, Input, Select, DatePicker, Button, Space, Tag, Dropdown, Row, Col, Modal, message, Checkbox, Typography } from 'antd';
 import {
   SearchOutlined,
   EyeOutlined,
@@ -7,26 +7,45 @@ import {
   DeleteOutlined,
   MoreOutlined,
   PlusOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import StatusTag from '../components/StatusTag';
 import GoldButton from '../components/GoldButton';
 import { useLoads } from '../context/LoadsContext';
 import { useLanguage } from '../context/LanguageContext';
-import { UserOutlined } from '@ant-design/icons';
+import { useAuth } from '../context/AuthContext';
 import type { Load } from '../types';
 
 const { RangePicker } = DatePicker;
+const { Text } = Typography;
 
 export default function LoadListScreen() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteRiskCheckbox, setDeleteRiskCheckbox] = useState(false);
+
   const navigate = useNavigate();
-  const { loads } = useLoads();
+  const location = useLocation();
+  const { loads, deleteLoad } = useLoads();
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  React.useEffect(() => {
+    if (location.state?.searchText !== undefined) {
+      setSearchText(location.state.searchText);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const isChairman = user?.role === 'CHAIRMAN';
+  const canDelete = user?.role === 'MANAGER' || user?.role === 'LOAD_ADMIN';
 
   const filteredLoads = loads.filter(load => {
     const matchSearch = !searchText ||
@@ -70,7 +89,7 @@ export default function LoadListScreen() {
       responsive: ['md'],
       render: (_, record) => record.assignedDriver ? (
         <Space>
-          <UserOutlined style={{ color: '#1A237E' }} />
+          <UserOutlined style={{ color: '#0B4C8C' }} />
           <span className="kkp-text-dark">{record.assignedDriver}</span>
         </Space>
       ) : (
@@ -102,8 +121,8 @@ export default function LoadListScreen() {
         <Tag style={{
           borderRadius: 20,
           fontWeight: 700,
-          background: count > 0 ? 'rgba(26,35,126,0.08)' : '#F9FAFB',
-          color: count > 0 ? '#1A237E' : '#98A2B3',
+          background: count > 0 ? 'rgba(11,76,172,0.08)' : '#F9FAFB',
+          color: count > 0 ? '#0B4C8C' : '#98A2B3',
           border: 'none',
           minWidth: 32,
           textAlign: 'center',
@@ -114,11 +133,27 @@ export default function LoadListScreen() {
     },
     {
       title: t('loads.budget'),
-      dataIndex: 'budget',
       key: 'budget',
-      width: 110,
+      width: 140,
       responsive: ['md'],
-      render: (b) => <span className="kkp-text-navy kkp-weight-600">₹{b.toLocaleString()}</span>,
+      render: (_, record) => {
+        if (record.priceType === 'per_ton') {
+          return (
+            <div>
+              <span className="kkp-text-navy kkp-weight-700">₹{(record.ratePerTon || 0).toLocaleString()}/T</span>
+              <div className="kkp-text-drab" style={{ fontSize: 11, fontWeight: 500 }}>
+                Total: ₹{(record.budget || 0).toLocaleString()}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div>
+            <span className="kkp-text-navy kkp-weight-700">₹{record.budget.toLocaleString()}</span>
+            <div className="kkp-text-drab" style={{ fontSize: 11, fontWeight: 500 }}>Fixed Price</div>
+          </div>
+        );
+      },
     },
     {
       title: t('loads.date'),
@@ -132,23 +167,57 @@ export default function LoadListScreen() {
       title: '',
       key: 'actions',
       width: 50,
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items: [
-              { key: 'view', icon: <EyeOutlined />, label: t('loads.viewBids'), onClick: () => navigate('/bids') },
-              { key: 'edit', icon: <EditOutlined />, label: t('loads.editLoad') },
-              { type: 'divider' },
-              { key: 'delete', icon: <DeleteOutlined />, label: t('loads.cancelLoad'), danger: true },
-            ],
-          }}
-          trigger={['click']}
-        >
-          <Button type="text" icon={<MoreOutlined />} className="kkp-text-drab" />
-        </Dropdown>
-      ),
+      render: (_, record) => {
+        const menuItems = [
+          { key: 'view', icon: <EyeOutlined />, label: t('loads.viewBids'), onClick: () => navigate('/bids') },
+        ];
+        if (!isChairman) {
+          menuItems.push(
+            { key: 'edit', icon: <EditOutlined />, label: t('loads.editLoad') } as any,
+            { type: 'divider' } as any,
+            { key: 'delete', icon: <DeleteOutlined />, label: t('loads.cancelLoad'), danger: true, onClick: () => handleDeleteClick(record) } as any
+          );
+        }
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={['click']}
+          >
+            <Button type="text" icon={<MoreOutlined />} className="kkp-text-drab" />
+          </Dropdown>
+        );
+      },
     },
   ];
+
+  const handleDeleteClick = (load: Load) => {
+    if (isChairman) {
+      Modal.error({
+        title: 'Access Restricted',
+        content: 'As Chairman, you have read-only auditor access and cannot delete or cancel loads.',
+      });
+      return;
+    }
+    if (!canDelete) {
+      Modal.error({
+        title: 'Access Restricted',
+        content: 'Unauthorized Operation: Deleting or cancelling load records is restricted.',
+      });
+      return;
+    }
+    setLoadToDelete(load);
+    setDeleteConfirmText('');
+    setDeleteRiskCheckbox(false);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (loadToDelete && deleteConfirmText === 'DELETE CONFIRM' && deleteRiskCheckbox) {
+      deleteLoad(loadToDelete.id);
+      message.success(`Load ${loadToDelete.id} permanently deleted.`);
+      setDeleteModalOpen(false);
+    }
+  };
 
   return (
     <div>
@@ -156,9 +225,11 @@ export default function LoadListScreen() {
         title={t('loads.title')}
         subtitle={`${loads.length} ${t('loads.totalLoads')} — ${loads.filter(l => l.status === 'active').length} ${t('loads.active')}`}
         extra={
-          <GoldButton icon={<PlusOutlined />} onClick={() => navigate('/loads/new')}>
-            {t('loads.postNew')}
-          </GoldButton>
+          !isChairman && (
+            <GoldButton icon={<PlusOutlined />} onClick={() => navigate('/loads/new')}>
+              {t('loads.postNew')}
+            </GoldButton>
+          )
         }
       />
 
@@ -215,6 +286,43 @@ export default function LoadListScreen() {
         style={{ borderRadius: 14, overflow: 'hidden' }}
         scroll={{ x: 800 }}
       />
+
+      {/* Secure Deletion Modal */}
+      <Modal
+        title={<span style={{ color: '#E63F3F', fontWeight: 800 }}>⚠️ Critical Data Deletion Confirmation</span>}
+        open={deleteModalOpen}
+        onOk={handleConfirmDelete}
+        onCancel={() => setDeleteModalOpen(false)}
+        okText="Permanently Delete"
+        okButtonProps={{ 
+          danger: true, 
+          disabled: deleteConfirmText !== 'DELETE CONFIRM' || !deleteRiskCheckbox,
+          className: 'kkp-btn-gold',
+          style: { background: '#E63F3F', border: 'none' }
+        }}
+      >
+        <div style={{ marginTop: 12, marginBottom: 16 }}>
+          <Text style={{ display: 'block', marginBottom: 12, fontSize: 13 }}>
+            You are about to permanently delete load <Text strong>{loadToDelete?.id}</Text> (<Text strong>{loadToDelete?.source} → {loadToDelete?.destination}</Text>). This action cannot be undone and will automatically cancel any active trips or driver bidding assignments associated with this load.
+          </Text>
+
+          <div style={{ marginBottom: 16 }}>
+            <Checkbox 
+              checked={deleteRiskCheckbox} 
+              onChange={e => setDeleteRiskCheckbox(e.target.checked)}
+            >
+              <Text strong style={{ color: '#E63F3F', fontSize: 12 }}>I confirm that this is a critical operation and I accept all operational risks.</Text>
+            </Checkbox>
+          </div>
+
+          <Text style={{ display: 'block', marginBottom: 6, fontSize: 12 }}>To proceed, please type <Text strong style={{ color: '#E63F3F' }}>DELETE CONFIRM</Text> below:</Text>
+          <Input 
+            placeholder="Type DELETE CONFIRM" 
+            value={deleteConfirmText} 
+            onChange={e => setDeleteConfirmText(e.target.value)} 
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

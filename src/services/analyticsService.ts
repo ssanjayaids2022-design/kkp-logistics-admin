@@ -211,7 +211,7 @@ export async function fetchLoadData(): Promise<LoadData> {
     matchingPerf: { autoMatch: 68, manualMatch: 32 },
     statusDist: [
       { status: 'Completed', count: 682, color: '#10B981' },
-      { status: 'In Transit', count: 48, color: '#1A237E' },
+      { status: 'In Transit', count: 48, color: '#0B4C8C' },
       { status: 'Pending', count: 72, color: '#F59E0B' },
       { status: 'Cancelled', count: 24, color: '#EF4444' },
       { status: 'Delayed', count: 16, color: '#8B5CF6' },

@@ -5,6 +5,7 @@ import type { Load } from '../types';
 interface LoadsContextType {
   loads: Load[];
   addLoad: (load: Omit<Load, 'id' | 'postedDate' | 'bidsCount' | 'status'>) => Load;
+  deleteLoad: (id: string) => void;
 }
 
 const LoadsContext = createContext<LoadsContextType | undefined>(undefined);
@@ -31,8 +32,12 @@ export function LoadsProvider({ children }: { children: ReactNode }) {
     return newLoad;
   };
 
+  const deleteLoad = (id: string) => {
+    setLoads(prev => prev.filter(l => l.id !== id));
+  };
+
   return (
-    <LoadsContext.Provider value={{ loads, addLoad }}>
+    <LoadsContext.Provider value={{ loads, addLoad, deleteLoad }}>
       {children}
     </LoadsContext.Provider>
   );

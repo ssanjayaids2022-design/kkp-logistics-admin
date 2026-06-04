@@ -115,7 +115,7 @@ export default function PredictiveAnalytics() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #1A237E, #283593)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #0B4C8C, #083B6B)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <LineChartOutlined style={{ color: '#fff', fontSize: 18 }} />
             </div>
             <Title level={4} style={{ margin: 0, color: '#101828' }}>{t('analytics.predictive')}</Title>
@@ -124,7 +124,7 @@ export default function PredictiveAnalytics() {
             Future operational intelligence · Auto-refreshes every 60s · Last: {lastRefresh.toLocaleTimeString()}
           </Text>
         </div>
-        <Tag color="#1A237E" style={{ borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }} onClick={() => load()}>
+        <Tag color="#0B4C8C" style={{ borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }} onClick={() => load()}>
           <ReloadOutlined /> Refresh
         </Tag>
       </div>
@@ -140,7 +140,7 @@ export default function PredictiveAnalytics() {
           <Col xs={24}>
             <Card bordered={false} style={cardStyle} title={
               <Space>
-                <LineChartOutlined style={{ color: '#1A237E' }} />
+                <LineChartOutlined style={{ color: '#0B4C8C' }} />
                 <Text strong style={{ color: '#101828' }}>Demand Forecast — Next 14 Days</Text>
               </Space>
             }>
@@ -154,7 +154,7 @@ export default function PredictiveAnalytics() {
                     formatter={(v: number, name: string) => [v, name === 'expected' ? 'Expected Loads' : 'Actual Loads']}
                   />
                   <Legend formatter={(v) => v === 'expected' ? 'Forecast' : 'Actual'} />
-                  <Line type="monotone" dataKey="expected" stroke="#1A237E" strokeWidth={2.5} dot={false} strokeDasharray="5 3" name="expected" />
+                  <Line type="monotone" dataKey="expected" stroke="#0B4C8C" strokeWidth={2.5} dot={false} strokeDasharray="5 3" name="expected" />
                   <Line type="monotone" dataKey="actual" stroke="#10B981" strokeWidth={2.5} dot={{ r: 3 }} name="actual" connectNulls={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -206,7 +206,7 @@ export default function PredictiveAnalytics() {
                   />
                   <Legend />
                   <Bar dataKey="market" name="Market Price" fill="#E4E7EC" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="suggested" name="Suggested Price" fill="#CA9D50" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="suggested" name="Suggested Price" fill="#FFC20E" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -228,7 +228,7 @@ export default function PredictiveAnalytics() {
                 <div key={r.route} style={{ marginBottom: 16, padding: 12, background: '#F9FAFB', borderRadius: 10 }}>
                   <Text style={{ fontSize: 12, fontWeight: 700, color: '#344054', display: 'block', marginBottom: 8 }}>{r.route}</Text>
                   <RiskGauge label="Cancellation Risk" value={r.cancellationRisk} color={r.cancellationRisk > 35 ? '#EF4444' : '#F59E0B'} />
-                  <RiskGauge label="Delay Probability" value={r.delayProbability} color={r.delayProbability > 40 ? '#8B5CF6' : '#1A237E'} />
+                  <RiskGauge label="Delay Probability" value={r.delayProbability} color={r.delayProbability > 40 ? '#8B5CF6' : '#0B4C8C'} />
                 </div>
               ))}
             </Card>
@@ -246,8 +246,8 @@ export default function PredictiveAnalytics() {
                   <PolarGrid stroke="#E4E7EC" />
                   <PolarAngleAxis dataKey="zone" tick={{ fontSize: 11, fill: '#667085' }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: '#98A2B3' }} />
-                  <Radar name="Availability" dataKey="availability" stroke="#1A237E" fill="#1A237E" fillOpacity={0.25} />
-                  <Radar name="Demand" dataKey="demand" stroke="#CA9D50" fill="#CA9D50" fillOpacity={0.2} />
+                  <Radar name="Availability" dataKey="availability" stroke="#0B4C8C" fill="#0B4C8C" fillOpacity={0.25} />
+                  <Radar name="Demand" dataKey="demand" stroke="#FFC20E" fill="#FFC20E" fillOpacity={0.2} />
                   <Legend />
                   <Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} />
                 </RadarChart>
@@ -259,10 +259,10 @@ export default function PredictiveAnalytics() {
           <Col xs={24}>
             <Card
               bordered={false}
-              style={{ ...cardStyle, background: 'linear-gradient(135deg, #0D1B6E 0%, #1A237E 60%, #1E3A5F 100%)' }}
+              style={{ ...cardStyle, background: 'linear-gradient(135deg, #05254A 0%, #0B4C8C 60%, #1E3A5F 100%)' }}
               title={
                 <Space>
-                  <RobotOutlined style={{ color: '#CA9D50', fontSize: 18 }} />
+                  <RobotOutlined style={{ color: '#FFC20E', fontSize: 18 }} />
                   <Text strong style={{ color: '#FFFFFF', fontSize: 16 }}>AI Insight Panel</Text>
                   <Tag color="gold" style={{ borderRadius: 6, fontSize: 10 }}>Live Intelligence</Tag>
                 </Space>
@@ -278,7 +278,7 @@ export default function PredictiveAnalytics() {
                       padding: 16,
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <Tag color="rgba(202,157,80,0.25)" style={{ border: '1px solid #CA9D50', color: '#CA9D50', fontSize: 10, borderRadius: 5 }}>
+                        <Tag color="rgba(255,194,14,0.15)" style={{ border: '1px solid #FFC20E', color: '#FFC20E', fontSize: 10, borderRadius: 5 }}>
                           {insight.category}
                         </Tag>
                         <Text style={{ fontSize: 11, color: '#98A2B3' }}>{insight.confidence}% confidence</Text>
@@ -287,7 +287,7 @@ export default function PredictiveAnalytics() {
                       <Progress
                         percent={insight.confidence}
                         showInfo={false}
-                        strokeColor="#CA9D50"
+                        strokeColor="#FFC20E"
                         trailColor="rgba(255,255,255,0.1)"
                         strokeWidth={4}
                         style={{ marginTop: 10 }}

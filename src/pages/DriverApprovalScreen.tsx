@@ -12,11 +12,13 @@ import {
   FileProtectOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useLocation } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import StatusTag from '../components/StatusTag';
 import { drivers } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 import type { Driver, DocumentStatus } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const docStatusColors: Record<DocumentStatus, string> = {
   verified: 'success',
@@ -38,6 +40,17 @@ export default function DriverApprovalScreen() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [docModal, setDocModal] = useState<Driver | null>(null);
   const { t } = useLanguage();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const isReadOnly = user?.role === 'CHAIRMAN' || user?.role === 'LOAD_ADMIN';
+
+  React.useEffect(() => {
+    if (location.state?.searchText !== undefined) {
+      setSearchText(location.state.searchText);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const filteredDrivers = drivers.filter(d => {
     const matchSearch = !searchText ||
@@ -98,7 +111,7 @@ export default function DriverApprovalScreen() {
             <Badge
               count={`${verified}/${total}`}
               style={{
-                backgroundColor: verified === total ? '#12B76A' : verified > 0 ? '#CA9D50' : '#F04438',
+                backgroundColor: verified === total ? '#12B76A' : verified > 0 ? '#FFC20E' : '#F04438',
                 fontWeight: 700,
                 fontSize: 11,
               }}
@@ -125,7 +138,7 @@ export default function DriverApprovalScreen() {
       responsive: ['lg'],
       sorter: (a, b) => a.rating - b.rating,
       render: (r) => (
-        <span className="kkp-text-gold kkp-weight-700">
+        <span className="kkp-text-yellow kkp-weight-700">
           {r > 0 ? `★ ${r}` : '—'}
         </span>
       ),
@@ -222,11 +235,11 @@ export default function DriverApprovalScreen() {
       </Row>
 
       <Table
-        rowSelection={{
+        rowSelection={isReadOnly ? undefined : {
           selectedRowKeys,
           onChange: setSelectedRowKeys,
         }}
-        columns={columns}
+        columns={isReadOnly ? columns.filter(c => c.key !== 'actions') : columns}
         dataSource={filteredDrivers}
         rowKey="id"
         pagination={{ pageSize: 10 }}

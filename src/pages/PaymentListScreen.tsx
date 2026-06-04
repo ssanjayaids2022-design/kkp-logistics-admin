@@ -7,16 +7,29 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useLocation } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import StatusTag from '../components/StatusTag';
 import { payments } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 import type { Payment } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 export default function PaymentListScreen() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const { t } = useLanguage();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const isChairman = user?.role === 'CHAIRMAN';
+
+  React.useEffect(() => {
+    if (location.state?.searchText !== undefined) {
+      setSearchText(location.state.searchText);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const filteredPayments = payments.filter(p => {
     const matchSearch = !searchText ||
@@ -108,11 +121,12 @@ export default function PaymentListScreen() {
             <Button
               size="small"
               onClick={() => message.success(`Payment marked as paid for ${record.loadId}`)}
+              disabled={isChairman}
               style={{
                 borderRadius: 8,
-                background: 'rgba(26,35,126,0.05)',
-                borderColor: '#1A237E',
-                color: '#1A237E',
+                background: 'rgba(11,76,172,0.05)',
+                borderColor: '#0B4C8C',
+                color: '#0B4C8C',
                 fontWeight: 600,
                 fontSize: 12,
               }}
@@ -166,7 +180,7 @@ export default function PaymentListScreen() {
               title={<span className="kkp-text-drab kkp-text-caption">{t('payments.pendingAmount')}</span>}
               value={totalPending}
               prefix="₹"
-              valueStyle={{ color: '#CA9D50', fontSize: 18, fontWeight: 800, fontFamily: '"Manrope", sans-serif' }}
+              valueStyle={{ color: '#FFC20E', fontSize: 18, fontWeight: 800, fontFamily: '"Manrope", sans-serif' }}
               formatter={(v) => Number(v).toLocaleString()}
             />
           </Card>

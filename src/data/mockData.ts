@@ -160,3 +160,228 @@ export const indianCities = [
   'Varanasi, UP', 'Agra, UP', 'Nashik, MH', 'Jodhpur, RJ', 'Udaipur, RJ',
   'Dehradun, UK', 'Shimla, HP', 'Amritsar, PB', 'Jalandhar, PB',
 ];
+
+// ─── Driver Performance ──────────────────────────────────────────────────────
+export interface DriverPerformance {
+  key: string;
+  name: string;
+  phone: string;
+  totalTrips: number;
+  activeTrips: number;
+  successRate: number;
+  avgTripValue: number;
+  totalEarnings: number;
+  lastActive: string;
+  verificationStatus: 'approved' | 'pending_approval' | 'rejected' | 'suspended';
+}
+
+export const driverPerformanceData: DriverPerformance[] = [
+  { key: '1', name: 'Suresh Kumar', phone: '+91 98765 43210', totalTrips: 342, activeTrips: 2, successRate: 98.5, avgTripValue: 35000, totalEarnings: 11970000, lastActive: '2026-05-25', verificationStatus: 'approved' },
+  { key: '2', name: 'Rajesh Patel', phone: '+91 87654 32109', totalTrips: 278, activeTrips: 1, successRate: 96.2, avgTripValue: 42000, totalEarnings: 11676000, lastActive: '2026-05-24', verificationStatus: 'approved' },
+  { key: '3', name: 'Amar Singh', phone: '+91 76543 21098', totalTrips: 415, activeTrips: 3, successRate: 99.1, avgTripValue: 31000, totalEarnings: 12865000, lastActive: '2026-05-25', verificationStatus: 'approved' },
+  { key: '4', name: 'Vikram Yadav', phone: '+91 65432 10987', totalTrips: 156, activeTrips: 1, successRate: 92.4, avgTripValue: 24000, totalEarnings: 3744000, lastActive: '2026-05-23', verificationStatus: 'approved' },
+  { key: '5', name: 'Ravi Shankar', phone: '+91 54321 09876', totalTrips: 210, activeTrips: 2, successRate: 95.8, avgTripValue: 29000, totalEarnings: 6090000, lastActive: '2026-05-25', verificationStatus: 'approved' },
+  { key: '6', name: 'Mohammed Ali', phone: '+91 43210 98765', totalTrips: 520, activeTrips: 4, successRate: 99.4, avgTripValue: 45000, totalEarnings: 23400000, lastActive: '2026-05-25', verificationStatus: 'approved' },
+  { key: '7', name: 'Deepak Nair', phone: '+91 32109 87654', totalTrips: 187, activeTrips: 1, successRate: 94.6, avgTripValue: 28000, totalEarnings: 5236000, lastActive: '2026-05-24', verificationStatus: 'approved' },
+  { key: '8', name: 'Harpreet Singh', phone: '+91 21098 76543', totalTrips: 298, activeTrips: 2, successRate: 97.0, avgTripValue: 38000, totalEarnings: 11324000, lastActive: '2026-05-25', verificationStatus: 'approved' },
+  { key: '9', name: 'Pradeep Reddy', phone: '+91 10987 65432', totalTrips: 45, activeTrips: 0, successRate: 91.1, avgTripValue: 32000, totalEarnings: 1440000, lastActive: '2026-05-20', verificationStatus: 'pending_approval' },
+  { key: '10', name: 'Arvind Sharma', phone: '+91 09876 54321', totalTrips: 32, activeTrips: 0, successRate: 89.5, avgTripValue: 28000, totalEarnings: 896000, lastActive: '2026-05-18', verificationStatus: 'pending_approval' },
+];
+
+export const driverLeaderboardData = [...driverPerformanceData]
+  .sort((a, b) => b.totalTrips - a.totalTrips)
+  .slice(0, 10);
+
+// ─── Load Performance ────────────────────────────────────────────────────────
+export interface LoadPerformance {
+  key: string;
+  loadId: string;
+  route: string;
+  cargoType: string;
+  basePrice: number;
+  bidCount: number;
+  winningBid: number;
+  bidRange: string;
+  timeToAssign: string;
+  status: string;
+  postedDate: string;
+}
+
+export const loadPerformanceData: LoadPerformance[] = [
+  { key: '1', loadId: 'LD-1001', route: 'Mumbai → Delhi', cargoType: 'Industrial Goods', basePrice: 45000, bidCount: 5, winningBid: 42000, bidRange: '₹38,000 - ₹46,000', timeToAssign: '4.2 hrs', status: 'Active', postedDate: '2026-04-08' },
+  { key: '2', loadId: 'LD-1003', route: 'Kolkata → Guwahati', cargoType: 'Chemicals', basePrice: 28000, bidCount: 7, winningBid: 27500, bidRange: '₹26,000 - ₹29,000', timeToAssign: '2.5 hrs', status: 'In Transit', postedDate: '2026-04-07' },
+  { key: '3', loadId: 'LD-1005', route: 'Ahmedabad → Jaipur', cargoType: 'Electronics', basePrice: 52000, bidCount: 6, winningBid: 51000, bidRange: '₹48,000 - ₹53,000', timeToAssign: '1.8 hrs', status: 'Delivered', postedDate: '2026-04-05' },
+  { key: '4', loadId: 'LD-1007', route: 'Surat → Nagpur', cargoType: 'Textiles', basePrice: 35000, bidCount: 8, winningBid: 34000, bidRange: '₹32,000 - ₹36,000', timeToAssign: '3.1 hrs', status: 'In Transit', postedDate: '2026-04-06' },
+  { key: '5', loadId: 'LD-1009', route: 'Delhi → Chandigarh', cargoType: 'FMCG', basePrice: 12000, bidCount: 5, winningBid: 11500, bidRange: '₹11,000 - ₹12,500', timeToAssign: '1.2 hrs', status: 'Completed', postedDate: '2026-04-03' },
+  { key: '6', loadId: 'LD-1010', route: 'Bangalore → Hyderabad', cargoType: 'Auto Parts', basePrice: 38000, bidCount: 4, winningBid: 37000, bidRange: '₹36,000 - ₹39,500', timeToAssign: '5.0 hrs', status: 'Delayed', postedDate: '2026-04-07' },
+];
+
+export const loadBiddingMetrics = {
+  avgBidsPerLoad: 4.8,
+  avgBidVsBaseDiff: -3.2,
+  bidAcceptanceRate: 94.2,
+  bidToAssignmentTime: '2.8 hrs',
+};
+
+// ─── Trip & POD Analytics ────────────────────────────────────────────────────
+export interface TripDetail {
+  key: string;
+  assignmentId: string;
+  driverName: string;
+  route: string;
+  status: string;
+  startDate: string;
+  duration: string;
+  agreedPrice: number;
+  podStatus: 'approved' | 'pending' | 'rejected' | 'missing';
+}
+
+export const tripDetailsData: TripDetail[] = [
+  { key: '1', assignmentId: 'TX-5001', driverName: 'Suresh Kumar', route: 'Mumbai → Delhi', status: 'Active', startDate: '2026-05-24', duration: '28 hrs', agreedPrice: 42000, podStatus: 'pending' },
+  { key: '2', assignmentId: 'TX-5002', driverName: 'Rajesh Patel', route: 'Ahmedabad → Jaipur', status: 'Completed', startDate: '2026-05-22', duration: '18 hrs', agreedPrice: 51000, podStatus: 'approved' },
+  { key: '3', assignmentId: 'TX-5003', driverName: 'Amar Singh', route: 'Surat → Nagpur', status: 'In Transit', startDate: '2026-05-23', duration: '22 hrs', agreedPrice: 34000, podStatus: 'missing' },
+  { key: '4', assignmentId: 'TX-5004', driverName: 'Vikram Yadav', route: 'Delhi → Chandigarh', status: 'Completed', startDate: '2026-05-21', duration: '7 hrs', agreedPrice: 11500, podStatus: 'approved' },
+  { key: '5', assignmentId: 'TX-5005', driverName: 'Ravi Shankar', route: 'Bangalore → Hyderabad', status: 'Delayed', startDate: '2026-05-23', duration: '14 hrs', agreedPrice: 37000, podStatus: 'rejected' },
+  { key: '6', assignmentId: 'TX-5006', driverName: 'Mohammed Ali', route: 'Rajkot → Mumbai', status: 'Completed', startDate: '2026-05-20', duration: '20 hrs', agreedPrice: 48000, podStatus: 'approved' },
+];
+
+export const tripPerformanceSummary = {
+  totalTrips: 1842,
+  completedTrips: 1682,
+  inProgressTrips: 112,
+  cancelledTrips: 48,
+  completionRate: 91.3,
+  avgDurationHours: 19.5,
+};
+
+export const podMetrics = {
+  avgTripDuration: '19.5 hrs',
+  podFirstTimeApprovalRate: 88.5,
+  avgPodReviewTime: '45 mins',
+};
+
+// ─── Payment Analytics ───────────────────────────────────────────────────────
+export interface PaymentPipeline {
+  key: string;
+  stage: string;
+  count: number;
+  totalAmount: number;
+}
+
+export const paymentPipelineData: PaymentPipeline[] = [
+  { key: '1', stage: 'Pending Advance Payout', count: 18, totalAmount: 185000 },
+  { key: '2', stage: 'Advance Paid', count: 42, totalAmount: 450000 },
+  { key: '3', stage: 'Pending Balance Payout (POD Pending)', count: 12, totalAmount: 240000 },
+  { key: '4', stage: 'Balance Approved & Processing', count: 8, totalAmount: 160000 },
+  { key: '5', stage: 'Paid & Closed', count: 1240, totalAmount: 24800000 },
+];
+
+export interface PaymentDetail {
+  key: string;
+  assignmentId: string;
+  driverName: string;
+  totalAmount: number;
+  advancePaid: number;
+  advanceStatus: string;
+  balancePaid: number;
+  balanceStatus: string;
+  dueDate: string;
+  paidDate: string;
+}
+
+export const paymentDetailsData: PaymentDetail[] = [
+  { key: '1', assignmentId: 'TX-5001', driverName: 'Suresh Kumar', totalAmount: 42000, advancePaid: 21000, advanceStatus: 'Paid', balancePaid: 0, balanceStatus: 'Pending POD', dueDate: '2026-05-30', paidDate: '-' },
+  { key: '2', assignmentId: 'TX-5002', driverName: 'Rajesh Patel', totalAmount: 51000, advancePaid: 25500, advanceStatus: 'Paid', balancePaid: 25500, balanceStatus: 'Paid', dueDate: '2026-05-24', paidDate: '2026-05-23' },
+  { key: '3', assignmentId: 'TX-5003', driverName: 'Amar Singh', totalAmount: 34000, advancePaid: 17000, advanceStatus: 'Paid', balancePaid: 0, balanceStatus: 'Pending POD', dueDate: '2026-05-29', paidDate: '-' },
+  { key: '4', assignmentId: 'TX-5004', driverName: 'Vikram Yadav', totalAmount: 11500, advancePaid: 5750, advanceStatus: 'Paid', balancePaid: 5750, balanceStatus: 'Paid', dueDate: '2026-05-23', paidDate: '2026-05-23' },
+  { key: '5', assignmentId: 'TX-5005', driverName: 'Ravi Shankar', totalAmount: 37000, advancePaid: 18500, advanceStatus: 'Paid', balancePaid: 0, balanceStatus: 'Disputed', dueDate: '2026-05-25', paidDate: '-' },
+];
+
+export const payoutMetrics = {
+  totalPaidOutMonth: 2840000,
+  totalPendingPayouts: 240000,
+  avgDaysToPayment: 3.2,
+  paymentDisputeCount: 2,
+};
+
+// ─── Operational Efficiency ──────────────────────────────────────────────────
+export interface AdminWorkload {
+  key: string;
+  taskType: string;
+  pendingCount: number;
+  avgTimeToComplete: string;
+  slaTarget: string;
+}
+
+export const adminWorkloadData: AdminWorkload[] = [
+  { key: '1', taskType: 'Driver Verification', pendingCount: 4, avgTimeToComplete: '22 mins', slaTarget: '30 mins' },
+  { key: '2', taskType: 'POD Reviews', pendingCount: 12, avgTimeToComplete: '45 mins', slaTarget: '60 mins' },
+  { key: '3', taskType: 'Bid Acceptance Reviews', pendingCount: 8, avgTimeToComplete: '10 mins', slaTarget: '15 mins' },
+  { key: '4', taskType: 'Payment Release Approvals', pendingCount: 7, avgTimeToComplete: '18 mins', slaTarget: '30 mins' },
+];
+
+export const slaMetrics = {
+  driverVerificationAvgTime: '22 mins',
+  podReviewAvgTime: '45 mins',
+  bidReviewAvgTime: '10 mins',
+  paymentReleaseAvgTime: '18 mins',
+};
+
+// ─── Route & Geography ───────────────────────────────────────────────────────
+export interface RoutePerformance {
+  key: string;
+  origin: string;
+  destination: string;
+  avgBids: number;
+  avgBidAmount: number;
+  avgDuration: string;
+  totalTrips: number;
+}
+
+export const routePerformanceMatrix: RoutePerformance[] = [
+  { key: '1', origin: 'Mumbai', destination: 'Delhi', avgBids: 5.2, avgBidAmount: 42000, avgDuration: '28 hrs', totalTrips: 185 },
+  { key: '2', origin: 'Chennai', destination: 'Coimbatore', avgBids: 4.8, avgBidAmount: 17200, avgDuration: '10 hrs', totalTrips: 142 },
+  { key: '3', origin: 'Madurai', destination: 'Chennai', avgBids: 4.5, avgBidAmount: 16800, avgDuration: '11 hrs', totalTrips: 128 },
+  { key: '4', origin: 'Salem', destination: 'Trichy', avgBids: 3.9, avgBidAmount: 8900, avgDuration: '4 hrs', totalTrips: 98 },
+  { key: '5', origin: 'Coimbatore', destination: 'Salem', avgBids: 4.1, avgBidAmount: 8400, avgDuration: '5 hrs', totalTrips: 86 },
+];
+
+export interface CityActivity {
+  key: string;
+  city: string;
+  asOriginCount: number;
+  asDestinationCount: number;
+  totalVolume: number;
+}
+
+export const cityActivityData: CityActivity[] = [
+  { key: '1', city: 'Chennai', asOriginCount: 327, asDestinationCount: 290, totalVolume: 617 },
+  { key: '2', city: 'Mumbai', asOriginCount: 245, asDestinationCount: 220, totalVolume: 465 },
+  { key: '3', city: 'Delhi', asOriginCount: 198, asDestinationCount: 234, totalVolume: 432 },
+  { key: '4', city: 'Coimbatore', asOriginCount: 180, asDestinationCount: 210, totalVolume: 390 },
+  { key: '5', city: 'Bangalore', asOriginCount: 165, asDestinationCount: 185, totalVolume: 350 },
+];
+
+// ─── Executive Dashboard Trends (30 Days Daily Trips & Top Routes) ───────────
+export const dailyTripCompletionsTrend = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date();
+  d.setDate(d.getDate() - 30 + i);
+  return {
+    date: d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
+    trips: Math.round(15 + Math.random() * 15 + Math.sin(i / 2) * 5),
+  };
+});
+
+export const topRoutesByVolume = [
+  { route: 'Chennai → Coimbatore', volume: 185 },
+  { route: 'Chennai → Madurai', volume: 142 },
+  { route: 'Madurai → Chennai', volume: 128 },
+  { route: 'Salem → Trichy', volume: 98 },
+  { route: 'Coimbatore → Salem', volume: 86 },
+  { route: 'Trichy → Madurai', volume: 74 },
+  { route: 'Mumbai → Delhi', volume: 68 },
+  { route: 'Delhi → Chandigarh', volume: 62 },
+  { route: 'Bangalore → Hyderabad', volume: 55 },
+  { route: 'Kolkata → Guwahati', volume: 48 },
+];
+

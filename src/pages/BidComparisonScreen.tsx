@@ -12,9 +12,11 @@ import {
 } from '@ant-design/icons';
 import PageHeader from '../components/PageHeader';
 import GoldButton from '../components/GoldButton';
+import { useLocation } from 'react-router-dom';
 import { bids, loads } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 import type { Bid } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const { Text } = Typography;
 
@@ -23,6 +25,17 @@ export default function BidComparisonScreen() {
   const [selectedLoadId, setSelectedLoadId] = useState<string>('LD-1001');
   const [confirmModal, setConfirmModal] = useState<Bid | null>(null);
   const { t } = useLanguage();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const isChairman = user?.role === 'CHAIRMAN';
+
+  React.useEffect(() => {
+    if (location.state?.selectedLoadId) {
+      setSelectedLoadId(location.state.selectedLoadId);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const selectedLoad = loads.find(l => l.id === selectedLoadId);
   const loadBids = bids
@@ -83,9 +96,19 @@ export default function BidComparisonScreen() {
           >
             <Descriptions.Item label={t('loads.route')}>{selectedLoad.source} → {selectedLoad.destination}</Descriptions.Item>
             <Descriptions.Item label={t('loads.vehicle')}>{selectedLoad.vehicleType}</Descriptions.Item>
-            <Descriptions.Item label={t('loads.weight')}>{(selectedLoad.weight / 1000).toFixed(1)} Tons</Descriptions.Item>
+            <Descriptions.Item label={t('loads.weight')}>{selectedLoad.weight > 100 ? (selectedLoad.weight / 1000).toFixed(1) : selectedLoad.weight} Tons</Descriptions.Item>
             <Descriptions.Item label={t('loads.budget')}>
-              <span className="kkp-text-gold kkp-weight-700">₹{selectedLoad.budget.toLocaleString()}</span>
+              {selectedLoad.priceType === 'per_ton' ? (
+                <span>
+                  <span className="kkp-text-gold kkp-weight-700">₹{selectedLoad.ratePerTon?.toLocaleString()}/Ton</span>
+                  <span className="kkp-text-drab" style={{ fontSize: 12, marginLeft: 8 }}>(Total: ₹{selectedLoad.budget.toLocaleString()})</span>
+                </span>
+              ) : (
+                <span>
+                  <span className="kkp-text-gold kkp-weight-700">₹{selectedLoad.budget.toLocaleString()}</span>
+                  <span className="kkp-text-drab" style={{ fontSize: 12, marginLeft: 8 }}>(Fixed)</span>
+                </span>
+              )}
             </Descriptions.Item>
           </Descriptions>
         </Card>
@@ -107,14 +130,15 @@ export default function BidComparisonScreen() {
                   padding: '2px 10px',
                   borderRadius: 20,
                   fontSize: 10,
-                  background: '#CA9D50',
+                  background: '#FFC20E',
+                  color: '#0F172A',
                 }}>
                   <TrophyOutlined /> {t('bids.bestPrice')}
                 </div>
               )}
 
               <div className="kkp-items-center kkp-gap-12 kkp-mb-16">
-                <Avatar size={48} style={{ backgroundColor: '#1A237E', color: '#FFFFFF', fontWeight: 700, fontSize: 18 }}>
+                <Avatar size={48} style={{ backgroundColor: '#0B4C8C', color: '#FFFFFF', fontWeight: 700, fontSize: 18 }}>
                   {bid.driverName.charAt(0)}
                 </Avatar>
                 <div>
@@ -123,7 +147,7 @@ export default function BidComparisonScreen() {
                   </Text>
                   <div className="kkp-items-center kkp-gap-8">
                     <Rate disabled defaultValue={bid.driverRating} allowHalf
-                      style={{ fontSize: 12, color: '#CA9D50' }}
+                      style={{ fontSize: 12, color: '#FFC20E' }}
                     />
                     <Text style={{ color: '#667085', fontSize: 12 }}>{bid.driverRating}</Text>
                   </div>
@@ -154,6 +178,7 @@ export default function BidComparisonScreen() {
                   icon={<CheckOutlined />}
                   onClick={() => setConfirmModal(bid)}
                   style={{ flex: 1 }}
+                  disabled={isChairman}
                 >
                   {t('bids.assign')}
                 </GoldButton>
@@ -161,6 +186,7 @@ export default function BidComparisonScreen() {
                   danger
                   icon={<CloseOutlined />}
                   style={{ borderRadius: 10 }}
+                  disabled={isChairman}
                 >
                   {t('bids.reject')}
                 </Button>
@@ -178,7 +204,7 @@ export default function BidComparisonScreen() {
         okText={t('bids.confirmBtn')}
         okButtonProps={{
           style: {
-            background: '#1A237E',
+            background: '#0B4C8C',
             border: 'none',
             color: '#FFFFFF',
             fontWeight: 700,

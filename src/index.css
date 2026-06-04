@@ -1,8 +1,8 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 /* â”€â”€â”€ Global Resets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€âbody {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #F5F7FA;
+  background: #FFF5E6;
   color: #101828;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -21,7 +21,7 @@ h4,
 h5,
 h6 {
   font-family: 'Manrope', sans-serif;
-  color: #1A237E;
+  color: #0B4C8C;
 }
 
 /* â”€â”€â”€ Custom Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -47,9 +47,30 @@ h6 {
 /* â”€â”€â”€ Ant Design Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .ant-layout-sider-trigger {
-  background: #FFFFFF !important;
-  border-top: 1px solid #E4E7EC !important;
-  color: #1A237E !important;
+  background: #0498D9 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+}
+
+.ant-layout-sider-trigger:hover {
+  color: #FFFFFF !important;
+}
+
+/* Force sidebar Menu gradient to show through — remove Ant Design's black #001529 */
+.ant-layout-sider .ant-menu,
+.ant-layout-sider .ant-menu-dark,
+.ant-layout-sider .ant-menu-inline,
+.ant-layout-sider .ant-menu-sub,
+.ant-layout-sider .ant-menu-submenu,
+.ant-layout-sider .ant-menu-submenu-title,
+.ant-layout-sider .ant-menu-item-group,
+.ant-layout-sider .ant-menu-item {
+  background: transparent !important;
+}
+
+/* Submenu expanded panel — also transparent */
+.ant-layout-sider .ant-menu-sub.ant-menu-inline {
+  background: rgba(0, 0, 0, 0.12) !important;
 }
 
 .ant-table-tbody>tr {
@@ -78,8 +99,8 @@ h6 {
 }
 
 ::selection {
-  background: rgba(26, 35, 126, 0.1);
-  color: #1A237E;
+  background: rgba(11, 76, 172, 0.1);
+  color: #0B4C8C;
 }
 
 .ant-input::placeholder,
@@ -128,22 +149,28 @@ h6 {
 }
 
 .kkp-card-accent {
-  border: 1px solid #1A237E !important;
+  border: 1px solid #0B4C8C !important;
 }
 
 .kkp-glass {
-  background: rgba(255, 255, 255, 0.8) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  backdrop-filter: blur(12px) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.7) !important;
+  backdrop-filter: blur(24px) saturate(1.7) !important;
+  border-bottom: 1px solid rgba(11, 76, 172, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(16, 24, 40, 0.03) !important;
 }
 
 /* Typography */
 .kkp-text-gold {
-  color: #CA9D50 !important;
+  color: #F4811F !important; /* Brand Orange from Logo Pin */
+}
+
+.kkp-text-yellow {
+  color: #FFC20E !important; /* Brand Yellow from Logo Pin */
 }
 
 .kkp-text-navy {
-  color: #1A237E !important;
+  color: #0B4C8C !important; /* Brand Blue */
 }
 
 .kkp-text-muted {
@@ -236,7 +263,7 @@ h6 {
 
 /* Specific Component Wrappers */
 .kkp-sidebar-header {
-  border-bottom: 1px solid #F2F4F7;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   margin-bottom: 8px;
   min-height: 80px;
 }
@@ -248,14 +275,18 @@ h6 {
   border: 1px solid #EAECF0;
 }
 
+.ant-layout-sider-trigger {
+  color: #94A3B8 !important;
+}
+
 .kkp-stat-value {
   font-family: 'Manrope', sans-serif !important;
   font-weight: 800 !important;
-  color: #1A237E !important;
+  color: #0B4C8C !important;
 }
 
 .kkp-card-dynamic {
-  --kkp-color: #1A237E;
+  --kkp-color: #0B4C8C;
   border-radius: 12px !important;
   border: 1px solid #E4E7EC !important;
   background: #FFFFFF !important;
@@ -281,7 +312,7 @@ h6 {
 }
 
 .kkp-login-bg {
-  background: linear-gradient(135deg, #1A237E 0%, #0D1240 100%) !important;
+  background: linear-gradient(135deg, #0B4C8C 0%, #05254A 100%) !important;
 }
 
 .kkp-login-card {
@@ -292,31 +323,484 @@ h6 {
 }
 
 .kkp-btn-gold {
-  background: #CA9D50 !important;
+  background: #F4811F !important;
   border: none !important;
   color: #FFFFFF !important;
   font-weight: 700 !important;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(244, 129, 31, 0.25) !important;
+  transition: all 0.3s ease !important;
 }
 
-/* Primary focus ring for accessibility */
+.kkp-btn-gold:hover {
+  background: #E06B1B !important;
+  box-shadow: 0 6px 16px rgba(244, 129, 31, 0.35) !important;
+}
+
+/* Brand focus ring for accessibility */
 *:focus-visible {
-  outline: 2px solid #1A237E;
+  outline: 2px solid #0B4C8C;
   outline-offset: 2px;
 }
 
+/* ─── Minimal Underline Search Bar ─────────────────────────────────────────── */
 
+@keyframes kkp-line-expand {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
 
-.kkp-btn-gold {
-  background: linear-gradient(135deg, #C8A46B 0%, #D4AF37 50%, #C8A46B 100%) !important;
+@keyframes kkp-search-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Search Bar — Transparent on gradient header ───────────────────────── */
+
+/* Target every possible antd class combo to style it with high specificity */
+.kkp-search-input,
+.kkp-search-input.ant-input-affix-wrapper,
+.kkp-search-input.ant-input-affix-wrapper:not(.ant-input-affix-wrapper-disabled),
+.kkp-search-input.ant-input-affix-wrapper:hover,
+.kkp-search-input.ant-input-affix-wrapper-focused,
+.kkp-search-input.ant-input-affix-wrapper:focus,
+.kkp-search-input.ant-input-affix-wrapper:focus-within,
+.kkp-search-input:hover,
+.kkp-search-input:focus-within {
+  background: rgba(11, 76, 172, 0.04) !important;
+  background-color: rgba(11, 76, 172, 0.04) !important;
+  border: 1.5px solid rgba(11, 76, 172, 0.15) !important;
+  border-radius: 50px !important;
+  padding: 6px 18px 6px 12px !important;
+  font-size: 14px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.kkp-search-input:hover,
+.kkp-search-input.ant-input-affix-wrapper:hover {
+  background: rgba(11, 76, 172, 0.08) !important;
+  background-color: rgba(11, 76, 172, 0.08) !important;
+  border-color: rgba(11, 76, 172, 0.3) !important;
+}
+
+.kkp-search-input:focus-within,
+.kkp-search-input.ant-input-affix-wrapper-focused {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  border-color: #0B4C8C !important;
+  box-shadow: 0 0 0 3px rgba(11, 76, 172, 0.12), 0 4px 12px rgba(11, 76, 172, 0.06) !important;
+}
+
+/* Inner <input> */
+.kkp-search-input input,
+.kkp-search-input .ant-input {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #101828 !important;
+  caret-color: #0B4C8C !important;
+  font-size: 14px !important;
+  letter-spacing: 0.01em !important;
+}
+
+.kkp-search-input input::placeholder,
+.kkp-search-input .ant-input::placeholder {
+  color: #667085 !important;
+  font-weight: 400 !important;
+}
+
+.kkp-search-input .ant-input-prefix {
+  margin-right: 10px !important;
+  transition: transform 0.2s ease !important;
+}
+
+.kkp-search-input:focus-within .ant-input-prefix {
+  transform: scale(1.1);
+}
+
+.kkp-search-input .ant-input-clear-icon,
+.kkp-search-input .ant-input-clear-icon svg {
+  color: #667085 !important;
+}
+
+/* ─── Header Buttons & Interactive Elements ────────────────────────────────── */
+
+.kkp-header-btn {
+  color: #475467 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  height: 38px !important;
+  width: 38px !important;
+  padding: 0 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.kkp-header-btn:hover {
+  background: rgba(11, 76, 172, 0.06) !important;
+  color: #0B4C8C !important;
+  transform: translateY(-1px);
+}
+
+.kkp-header-btn:active {
+  transform: translateY(0);
+}
+
+.kkp-header-action-btn {
+  color: #475467 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border-radius: 10px !important;
+  height: 38px !important;
+  padding: 0 12px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.kkp-header-action-btn:hover {
+  background: rgba(11, 76, 172, 0.06) !important;
+  color: #0B4C8C !important;
+  transform: translateY(-1px);
+}
+
+.kkp-header-action-btn:active {
+  transform: translateY(0);
+}
+
+.kkp-search-icon {
+  color: #667085 !important;
+  transition: color 0.25s ease, transform 0.25s ease !important;
+}
+
+.kkp-search-input:focus-within .kkp-search-icon {
+  color: #0B4C8C !important;
+}
+
+.kkp-avatar-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 2px solid transparent !important;
+}
+
+.kkp-avatar-btn:hover {
+  transform: scale(1.06) translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.1) !important;
+}
+
+.kkp-avatar-btn:active {
+  transform: scale(1) translateY(0);
+}
+
+.kkp-role-tag-super {
+  background: #FFC20E !important;
   border: none !important;
-  color: #1A1A1A !important;
+  color: #0F172A !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 14px rgba(200,164,107,0.4), 0 0 20px rgba(212,175,55,0.15) !important;
+  padding: 2px 8px !important;
 }
 
-/* Gold focus ring for accessibility */
-*:focus-visible {
-  outline: 2px solid #C8A46B;
-  outline-offset: 2px;
+.kkp-role-tag-admin {
+  background: rgba(11, 76, 172, 0.08) !important;
+  border: 1px solid rgba(11, 76, 172, 0.18) !important;
+  color: #0B4C8C !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 2px 8px !important;
+  transition: all 0.2s ease !important;
 }
+
+/* ─── Search Dropdown — clean card style ───────────────────────────────────── */
+
+.kkp-search-dropdown {
+  border-radius: 16px !important;
+  padding: 10px 6px !important;
+  box-shadow:
+    0 4px 6px rgba(16, 24, 40, 0.04),
+    0 10px 40px rgba(16, 24, 40, 0.12),
+    0 0 0 1px rgba(228, 231, 236, 0.8) !important;
+  border: none !important;
+  background: #FFFFFF !important;
+  overflow: hidden !important;
+  position: relative !important;
+  animation: kkp-search-fadein 0.22s ease forwards;
+}
+
+/* Thin gradient top rule */
+.kkp-search-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, #0B4C8C 0%, #0498D9 55%, #08A9E6 100%);
+  border-radius: 0 0 2px 2px;
+}
+
+/* Category labels */
+.kkp-search-dropdown .ant-select-item-group {
+  color: #667085 !important;
+  font-family: 'Manrope', sans-serif !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  padding: 10px 14px 4px !important;
+  border-bottom: 1px solid #F2F4F7 !important;
+  margin-bottom: 2px !important;
+  text-transform: uppercase;
+}
+
+/* Option rows */
+.kkp-search-dropdown .ant-select-item-option {
+  border-radius: 10px !important;
+  margin: 2px 2px !important;
+  padding: 10px 14px !important;
+  transition: background 0.15s ease, transform 0.12s ease !important;
+  color: #344054 !important;
+  font-size: 13.5px !important;
+}
+
+.kkp-search-dropdown .ant-select-item-option-active,
+.kkp-search-dropdown .ant-select-item-option:hover {
+  background: #F5F8FF !important;
+  color: #0B4C8C !important;
+  transform: translateX(2px) !important;
+}
+
+.kkp-search-dropdown .ant-select-item-option-selected {
+  background: #EBF2FE !important;
+  color: #0B4C8C !important;
+  font-weight: 600 !important;
+}
+
+/* ─── Dark Theme Overrides ────────────────────────────────────────────────── */
+
+.dark-theme body {
+  background: #0B0F19 !important;
+  color: #F8FAFC !important;
+}
+
+.dark-theme h1,
+.dark-theme h2,
+.dark-theme h3,
+.dark-theme h4,
+.dark-theme h5,
+.dark-theme h6 {
+  color: #E2E8F0 !important;
+}
+
+/* Glass Header in Dark Mode */
+.dark-theme .kkp-glass {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Header Buttons in Dark Mode */
+.dark-theme .kkp-header-btn,
+.dark-theme .kkp-header-action-btn {
+  color: #94A3B8 !important;
+}
+
+.dark-theme .kkp-header-btn:hover,
+.dark-theme .kkp-header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #08A9E6 !important;
+}
+
+/* Search Bar in Dark Mode */
+.dark-theme .kkp-search-input,
+.dark-theme .kkp-search-input.ant-input-affix-wrapper,
+.dark-theme .kkp-search-input.ant-input-affix-wrapper:not(.ant-input-affix-wrapper-disabled) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark-theme .kkp-search-input:hover,
+.dark-theme .kkp-search-input.ant-input-affix-wrapper:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.dark-theme .kkp-search-input:focus-within,
+.dark-theme .kkp-search-input.ant-input-affix-wrapper-focused {
+  background: #1E293B !important;
+  background-color: #1E293B !important;
+  border-color: #08A9E6 !important;
+  box-shadow: 0 0 0 3px rgba(8, 169, 230, 0.18), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark-theme .kkp-search-input input,
+.dark-theme .kkp-search-input .ant-input {
+  color: #F8FAFC !important;
+  caret-color: #08A9E6 !important;
+}
+
+.dark-theme .kkp-search-input input::placeholder,
+.dark-theme .kkp-search-input .ant-input::placeholder {
+  color: #64748B !important;
+}
+
+.dark-theme .kkp-search-icon {
+  color: #64748B !important;
+}
+
+.dark-theme .kkp-search-input:focus-within .kkp-search-icon {
+  color: #08A9E6 !important;
+}
+
+.dark-theme .kkp-search-input .ant-input-clear-icon,
+.dark-theme .kkp-search-input .ant-input-clear-icon svg {
+  color: #64748B !important;
+}
+
+.dark-theme .kkp-avatar-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Search Dropdown in Dark Mode */
+.dark-theme .kkp-search-dropdown {
+  background: #1E293B !important;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.15),
+    0 10px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-theme .kkp-search-dropdown .ant-select-item-group {
+  color: #94A3B8 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark-theme .kkp-search-dropdown .ant-select-item-option {
+  color: #CBD5E1 !important;
+}
+
+.dark-theme .kkp-search-dropdown .ant-select-item-option-active,
+.dark-theme .kkp-search-dropdown .ant-select-item-option:hover {
+  background: #334155 !important;
+  color: #08A9E6 !important;
+  transform: translateX(2px) !important;
+}
+
+.dark-theme .kkp-search-dropdown .ant-select-item-option-selected {
+  background: rgba(11, 76, 172, 0.4) !important;
+  color: #38BDF8 !important;
+}
+
+.dark-theme .kkp-search-dropdown .kkp-flex-between span,
+.dark-theme .kkp-search-dropdown .kkp-items-center span {
+  color: #E2E8F0 !important;
+}
+
+.dark-theme .kkp-search-dropdown .kkp-flex-between span span {
+  color: #94A3B8 !important;
+}
+
+/* Card overrides in dark mode */
+.dark-theme .kkp-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ant design list items in settings screen */
+.dark-theme .ant-list-item-meta-title span,
+.dark-theme .ant-list-item-meta-title h4,
+.dark-theme .ant-list-item-meta-description span,
+.dark-theme .ant-list-item-meta-description {
+  color: #E2E8F0 !important;
+}
+
+.dark-theme .ant-list-item-meta-description {
+  color: #94A3B8 !important;
+}
+
+/* Custom cards or detail sections */
+.dark-theme .kkp-user-badge {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Custom login layout overrides if applicable */
+.dark-theme .kkp-login-bg {
+  background: linear-gradient(135deg, #0B0F19 0%, #0F172A 100%) !important;
+}
+
+.dark-theme .kkp-login-card {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+
+.dark-theme .kkp-role-tag-admin {
+  background: rgba(8, 169, 230, 0.12) !important;
+  border: 1px solid rgba(8, 169, 230, 0.25) !important;
+  color: #38BDF8 !important;
+}
+
+/* Role Tags Light Theme */
+.kkp-role-tag-chairman {
+  background: #FEF3C7 !important;
+  border: 1px solid #FCD34D !important;
+  color: #B45309 !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.kkp-role-tag-manager {
+  background: #EFF6FF !important;
+  border: 1px solid #BFDBFE !important;
+  color: #1E40AF !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.kkp-role-tag-loadadmin {
+  background: #F0FDFA !important;
+  border: 1px solid #CCFBF1 !important;
+  color: #0D9488 !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Role Tags Dark Theme */
+.dark-theme .kkp-role-tag-chairman {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  color: #FBBF24 !important;
+}
+
+.dark-theme .kkp-role-tag-manager {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  color: #60A5FA !important;
+}
+
+.dark-theme .kkp-role-tag-loadadmin {
+  background: rgba(20, 184, 166, 0.15) !important;
+  border: 1px solid rgba(20, 184, 166, 0.3) !important;
+  color: #2DD4BF !important;
+}
+

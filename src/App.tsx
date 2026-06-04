@@ -1,8 +1,9 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, App as AntApp, Spin } from 'antd';
-import { luxuryGoldTheme } from './theme';
+import { luxuryGoldTheme, luxuryGoldDarkTheme } from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import AppLayout from './layouts/AppLayout';
 import LoginScreen from './pages/LoginScreen';
 import DashboardScreen from './pages/DashboardScreen';
@@ -21,6 +22,14 @@ import { NotificationProvider } from './context/NotificationContext';
 const PredictiveAnalytics = React.lazy(() => import('./pages/PredictiveAnalytics'));
 const FinancialAnalytics = React.lazy(() => import('./pages/FinancialAnalytics'));
 const LoadAnalytics = React.lazy(() => import('./pages/LoadAnalytics'));
+const DriverAnalytics = React.lazy(() => import('./pages/DriverAnalytics'));
+const TripAnalytics = React.lazy(() => import('./pages/TripAnalytics'));
+const PaymentAnalyticsPage = React.lazy(() => import('./pages/PaymentAnalyticsPage'));
+const OperationalEfficiency = React.lazy(() => import('./pages/OperationalEfficiency'));
+const RouteAnalytics = React.lazy(() => import('./pages/RouteAnalytics'));
+const AdminManagement = React.lazy(() => import('./pages/AdminManagement'));
+const AuditLogs = React.lazy(() => import('./pages/AuditLogs'));
+const AccessMatrix = React.lazy(() => import('./pages/AccessMatrix'));
 
 const PageLoader = () => (
   <div className="kkp-flex-center" style={{ minHeight: 400 }}>
@@ -47,7 +56,7 @@ function RoleRoute({
   allowedRoles,
 }: {
   children: React.ReactNode;
-  allowedRoles: ('ADMIN' | 'SUPER_ADMIN' | 'manager' | 'operator')[];
+  allowedRoles: ('CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN')[];
 }) {
   const { user } = useAuth();
   if (!user || !allowedRoles.includes(user.role)) {
@@ -78,7 +87,14 @@ function AppRoutes() {
         <Route path="loads/new" element={<LoadPostingScreen />} />
         <Route path="bids" element={<BidComparisonScreen />} />
         <Route path="drivers" element={<DriverApprovalScreen />} />
-        <Route path="payments" element={<PaymentListScreen />} />
+        <Route
+          path="payments"
+          element={
+            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
+              <PaymentListScreen />
+            </RoleRoute>
+          }
+        />
         <Route path="profile" element={<ProfileScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
 
@@ -86,7 +102,7 @@ function AppRoutes() {
         <Route
           path="analytics/predictive"
           element={
-            <RoleRoute allowedRoles={['SUPER_ADMIN']}>
+            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
               <Suspense fallback={<PageLoader />}>
                 <PredictiveAnalytics />
               </Suspense>
@@ -96,7 +112,7 @@ function AppRoutes() {
         <Route
           path="analytics/financial"
           element={
-            <RoleRoute allowedRoles={['SUPER_ADMIN']}>
+            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
               <Suspense fallback={<PageLoader />}>
                 <FinancialAnalytics />
               </Suspense>
@@ -106,9 +122,79 @@ function AppRoutes() {
         <Route
           path="analytics/loads"
           element={
-            <RoleRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+            <Suspense fallback={<PageLoader />}>
+              <LoadAnalytics />
+            </Suspense>
+          }
+        />
+        <Route
+          path="analytics/drivers"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <DriverAnalytics />
+            </Suspense>
+          }
+        />
+        <Route
+          path="analytics/trips"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <TripAnalytics />
+            </Suspense>
+          }
+        />
+        <Route
+          path="analytics/payments-analytics"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PaymentAnalyticsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="analytics/operations"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <OperationalEfficiency />
+            </Suspense>
+          }
+        />
+        <Route
+          path="analytics/routes"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <RouteAnalytics />
+            </Suspense>
+          }
+        />
+
+        {/* ── System Administration Routes ── */}
+        <Route
+          path="admin-users"
+          element={
+            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
               <Suspense fallback={<PageLoader />}>
-                <LoadAnalytics />
+                <AdminManagement />
+              </Suspense>
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="access-matrix"
+          element={
+            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
+              <Suspense fallback={<PageLoader />}>
+                <AccessMatrix />
+              </Suspense>
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="audit-logs"
+          element={
+            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
+              <Suspense fallback={<PageLoader />}>
+                <AuditLogs />
               </Suspense>
             </RoleRoute>
           }
@@ -119,9 +205,10 @@ function AppRoutes() {
   );
 }
 
-export default function App() {
+function MainApp() {
+  const { isDarkMode } = useTheme();
   return (
-    <ConfigProvider theme={luxuryGoldTheme}>
+    <ConfigProvider theme={isDarkMode ? luxuryGoldDarkTheme : luxuryGoldTheme}>
       <AntApp>
         <BrowserRouter>
           <AuthProvider>
@@ -136,5 +223,13 @@ export default function App() {
         </BrowserRouter>
       </AntApp>
     </ConfigProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <MainApp />
+    </ThemeProvider>
   );
 }

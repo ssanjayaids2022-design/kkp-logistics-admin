@@ -1,14 +1,23 @@
 import React from 'react';
-import { Card, Typography, List, Switch, Select, Button, Divider, Avatar } from 'antd';
+import { Card as AntdCard, Typography, List, Switch, Select, Button, Divider, Avatar } from 'antd';
+const Card = AntdCard as any;
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { GlobalOutlined, BellOutlined, SecurityScanOutlined, MoonOutlined } from '@ant-design/icons';
 import PageHeader from '../components/PageHeader';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
+const Option = Select.Option as any;
 
 export default function SettingsScreen() {
   const { t, language, setLanguage } = useLanguage();
+  const { user } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useTheme();
+
+  const isManager = user?.role === 'MANAGER';
+  const isChairman = user?.role === 'CHAIRMAN';
+  const showEnterpriseSettings = isChairman || isManager;
 
   return (
     <div>
@@ -23,7 +32,7 @@ export default function SettingsScreen() {
             </Select>
           ]}>
             <List.Item.Meta
-              avatar={<Avatar style={{ backgroundColor: '#1A237E18', color: '#1A237E' }} icon={<GlobalOutlined />} />}
+              avatar={<Avatar style={{ backgroundColor: '#0B4C8C18', color: '#0B4C8C' }} icon={<GlobalOutlined />} />}
               title={<Text strong>{t('settings.language')}</Text>}
               description={t('settings.languageDesc')}
             />
@@ -37,7 +46,7 @@ export default function SettingsScreen() {
             />
           </List.Item>
           
-          <List.Item actions={[<Switch key="theme-switch" />]}>
+          <List.Item actions={[<Switch key="theme-switch" checked={isDarkMode} onChange={toggleDarkMode} />]}>
             <List.Item.Meta
               avatar={<Avatar style={{ backgroundColor: '#66708518', color: '#667085' }} icon={<MoonOutlined />} />}
               title={<Text strong>{t('settings.darkMode')}</Text>}
@@ -57,6 +66,56 @@ export default function SettingsScreen() {
             />
           </List.Item>
         </List>
+
+        {showEnterpriseSettings ? (
+          <>
+            <Divider />
+            <Title level={5} style={{ color: '#0B4C8C', marginBottom: isChairman ? 4 : 16 }}>⚙️ Enterprise System Settings</Title>
+            {isChairman && (
+              <div style={{ color: '#D46B08', background: '#FFF2E8', border: '1px solid #FFC069', padding: '6px 12px', borderRadius: 6, fontSize: 12, marginBottom: 16, display: 'inline-block' }}>
+                Read-Only: Chairman credentials cannot edit global configurations
+              </div>
+            )}
+            <List itemLayout="horizontal">
+              <List.Item actions={[<Switch key="webhook-switch" defaultChecked disabled={isChairman} />]}>
+                <List.Item.Meta
+                  avatar={<Avatar style={{ backgroundColor: '#F4811F18', color: '#F4811F' }} icon={<GlobalOutlined />} />}
+                  title={<Text strong>Slack Webhook Integrations</Text>}
+                  description="Publish live status alerts for delays and critical payouts to Slack channel"
+                />
+              </List.Item>
+              <List.Item actions={[
+                <Select key="retention-select" defaultValue="90" style={{ width: 140 }} disabled={isChairman}>
+                  <Option value="30">30 Days</Option>
+                  <Option value="90">90 Days</Option>
+                  <Option value="365">365 Days</Option>
+                </Select>
+              ]}>
+                <List.Item.Meta
+                  avatar={<Avatar style={{ backgroundColor: '#FFC20E18', color: '#FFC20E' }} icon={<SecurityScanOutlined />} />}
+                  title={<Text strong>Database Audit Logs Retention</Text>}
+                  description="Specify duration to keep security log entries in active storage"
+                />
+              </List.Item>
+              <List.Item actions={[<Switch key="backup-switch" defaultChecked disabled={isChairman} />]}>
+                <List.Item.Meta
+                  avatar={<Avatar style={{ backgroundColor: '#0B4C8C18', color: '#0B4C8C' }} icon={<GlobalOutlined />} />}
+                  title={<Text strong>Daily Automated Cloud Backup</Text>}
+                  description="Perform database backups at 02:00 IST to secure AWS S3 instance"
+                />
+              </List.Item>
+            </List>
+          </>
+        ) : (
+          <>
+            <Divider />
+            <div style={{ background: '#F8F9FC', padding: 20, borderRadius: 10, textAlign: 'center', border: '1px dashed #D0D5DD' }}>
+              <SecurityScanOutlined style={{ fontSize: 28, color: '#98A2B3', marginBottom: 8 }} />
+              <Title level={5} style={{ margin: 0, color: '#475467' }}>Enterprise System Settings Restricted</Title>
+              <Text type="secondary" style={{ fontSize: 13 }}>Only Super Administrators have access to change global configurations.</Text>
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );

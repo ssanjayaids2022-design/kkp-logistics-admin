@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Checkbox, Typography, message, Space } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Checkbox, Typography, message, Modal, Space } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,8 +8,11 @@ const { Title, Text, Link } = Typography;
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [forgotForm] = Form.useForm();
 
   const onFinish = async (values: { username: string; password: string; remember: boolean }) => {
     setLoading(true);
@@ -22,8 +25,17 @@ export default function LoginScreen() {
       message.success('Welcome back to KKP Logistics Command');
       navigate('/');
     } else {
-      message.error('Invalid credentials. Try admin / admin123');
+      message.error('Invalid username or password. Please try again.');
     }
+  };
+
+  const handleForgotPassword = async (values: { email: string }) => {
+    setForgotLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setForgotLoading(false);
+    message.success(`A password reset link has been dispatched to ${values.email}`);
+    setIsForgotModalOpen(false);
+    forgotForm.resetFields();
   };
 
   return (
@@ -36,7 +48,7 @@ export default function LoginScreen() {
         width: 500,
         height: 500,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(26,35,126,0.1) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(11,76,172,0.1) 0%, transparent 70%)',
         top: '-15%',
         right: '-10%',
       }} />
@@ -44,7 +56,7 @@ export default function LoginScreen() {
         width: 400,
         height: 400,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(202,157,80,0.05) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(244,129,31,0.05) 0%, transparent 70%)',
         bottom: '-10%',
         left: '-5%',
       }} />
@@ -62,7 +74,7 @@ export default function LoginScreen() {
           left: '20%',
           right: '20%',
           height: 3,
-          background: 'linear-gradient(90deg, transparent, #CA9D50, transparent)',
+          background: 'linear-gradient(90deg, transparent, #F4811F, transparent)',
           borderRadius: '0 0 50% 50%',
         }} />
 
@@ -77,7 +89,7 @@ export default function LoginScreen() {
               height: 72,
               borderRadius: 16,
               objectFit: 'contain',
-              filter: 'drop-shadow(0 4px 12px rgba(26,35,126,0.15))',
+              filter: 'drop-shadow(0 4px 12px rgba(11,76,172,0.15))',
             }}
           />
           <Title level={3} className="kkp-text-navy kkp-font-manrope kkp-weight-800" style={{
@@ -136,7 +148,13 @@ export default function LoginScreen() {
               <Form.Item name="remember" valuePropName="checked" noStyle>
                 <Checkbox style={{ color: '#475467' }}>Remember me</Checkbox>
               </Form.Item>
-              <Link className="kkp-text-gold" style={{ fontSize: 13, fontWeight: 600 }}>Forgot password?</Link>
+              <Link 
+                className="kkp-text-gold" 
+                style={{ fontSize: 13, fontWeight: 600 }}
+                onClick={() => setIsForgotModalOpen(true)}
+              >
+                Forgot password?
+              </Link>
             </div>
           </Form.Item>
 
@@ -161,15 +179,43 @@ export default function LoginScreen() {
             <Text className="kkp-text-drab" style={{ fontSize: 12 }}>
               Account secured with enterprise-grade encryption
             </Text>
-            <br />
-            <Text className="kkp-text-drab" style={{ fontSize: 11, marginTop: 8, display: 'inline-block' }}>
-              Admin: <Text style={{ color: '#1A237E', fontWeight: 600 }}>admin / admin123</Text>
-              <br />
-              Super: <Text style={{ color: '#1A237E', fontWeight: 600 }}>superadmin / super123</Text>
-            </Text>
           </div>
         </Form>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Modal
+        title={<span className="kkp-text-navy kkp-font-manrope kkp-weight-800">Forgot Password</span>}
+        open={isForgotModalOpen}
+        onCancel={() => {
+          setIsForgotModalOpen(false);
+          forgotForm.resetFields();
+        }}
+        onOk={() => forgotForm.submit()}
+        okText="Send Reset Link"
+        okButtonProps={{ loading: forgotLoading, className: 'kkp-btn-gold', style: { background: '#F4811F', border: 'none' } }}
+      >
+        <div style={{ marginTop: 16 }}>
+          <Text style={{ display: 'block', marginBottom: 16 }}>
+            Enter the corporate email address registered to your account. We will transmit a secure verification link to reset your credentials.
+          </Text>
+          <Form form={forgotForm} layout="vertical" onFinish={handleForgotPassword}>
+            <Form.Item
+              name="email"
+              label="Corporate Email"
+              rules={[
+                { required: true, message: 'Please enter your email address' },
+                { type: 'email', message: 'Please enter a valid email address' }
+              ]}
+            >
+              <Input
+                prefix={<MailOutlined className="kkp-text-drab" />}
+                placeholder="e.g. employee@kkptransports.com"
+              />
+            </Form.Item>
+          </Form>
+        </div>
+      </Modal>
     </div>
   );
 }

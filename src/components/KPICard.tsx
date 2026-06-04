@@ -12,7 +12,7 @@ interface KPICardProps {
   color?: string;
 }
 
-export default function KPICard({ title, value, trend, trendUp = true, icon, color = '#1A237E' }: KPICardProps) {
+export default function KPICard({ title, value, trend, trendUp = true, icon, color = '#0B4C8C' }: KPICardProps) {
   return (
     <Card
       hoverable
@@ -48,7 +48,7 @@ export default function KPICard({ title, value, trend, trendUp = true, icon, col
         valueStyle={{
           fontSize: 28,
           fontWeight: 800,
-          color: '#1A237E',
+          color: '#0B4C8C',
           fontFamily: '"Manrope", sans-serif',
           lineHeight: 1,
         }}

@@ -13,6 +13,10 @@ const translations: Record<string, Record<Language, string>> = {
   'nav.drivers': { en: 'Drivers', ta: 'ஓட்டுநர்கள்' },
   'nav.payments': { en: 'Payments', ta: 'கொடுப்பனவுகள்' },
   'nav.home': { en: 'Home', ta: 'முகப்பு' },
+  'nav.auditLogs': { en: 'Audit Logs', ta: 'ஆடிட் பதிவுகள்' },
+  'nav.adminUsers': { en: 'Admin Directory', ta: 'அட்மின் அடைவு' },
+  'nav.accessMatrix': { en: 'Access Matrix', ta: 'அணுகல் மேட்ரிக்ஸ்' },
+  'nav.systemAdmin': { en: 'Administration', ta: 'நிர்வாகம்' },
 
   // Sidebar branding
   'brand.tagline': { en: 'Safe and Fast', ta: 'பாதுகாப்பு மற்றும் வேகம்' },
@@ -66,6 +70,11 @@ const translations: Record<string, Record<Language, string>> = {
   'analytics.load': { en: 'Load Analytics', ta: 'சுமை பகுப்பாய்வு' },
   'analytics.predictive': { en: 'Predictive Analytics', ta: 'முன்கணிப்பு பகுப்பாய்வு' },
   'analytics.financial': { en: 'Financial Analytics', ta: 'நிதிப் பகுப்பாய்வு' },
+  'analytics.drivers': { en: 'Driver Analytics', ta: 'ஓட்டுநர் பகுப்பாய்வு' },
+  'analytics.trips': { en: 'Trip & POD Analytics', ta: 'பயணம் மற்றும் POD பகுப்பாய்வு' },
+  'analytics.payments-analytics': { en: 'Payment Analytics', ta: 'கொடுப்பனவு பகுப்பாய்வு' },
+  'analytics.operations': { en: 'Operational Efficiency', ta: 'செயல்பாட்டு திறன்' },
+  'analytics.routes': { en: 'Route & Geography', ta: 'பாதை & புவியியல்' },
 
   // Load Management
   'loads.title': { en: 'Load Management', ta: 'சுமை மேலாண்மை' },

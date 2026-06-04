@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Input, Select, DatePicker, InputNumber, Card as AntdCard, Row, Col, message } from 'antd';
+import { Form, Input, Select, DatePicker, InputNumber, Card as AntdCard, Row, Col, message, Radio } from 'antd';
 const Card = AntdCard as any;
 import { EnvironmentOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Modal, Button } from 'antd';
+import { useAuth } from '../context/AuthContext';
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore
@@ -31,16 +32,26 @@ export default function LoadPostingScreen() {
   const { addLoad } = useLoads();
   const { addNotification } = useNotifications();
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  const isChairman = user?.role === 'CHAIRMAN';
 
   const onFinish = (values: any) => {
+    const calculatedBudget = values.priceType === 'per_ton'
+      ? (values.ratePerTon * values.weight)
+      : values.fixedAmount;
+
     const newLoad = addLoad({
       source: values.source,
       destination: values.destination,
       pickupDate: values.pickupDate.format('DD/MM/YYYY'), // Format dayjs to string
       vehicleType: values.vehicleType,
       weight: values.weight,
-      budget: values.budget,
-    });
+      budget: calculatedBudget,
+      priceType: values.priceType,
+      ratePerTon: values.priceType === 'per_ton' ? values.ratePerTon : undefined,
+      fixedAmount: values.priceType === 'fixed' ? values.fixedAmount : undefined,
+    } as any);
 
     addNotification({
       title: 'Load Posted Successfully',
@@ -94,12 +105,18 @@ export default function LoadPostingScreen() {
       />
 
       <Card className="kkp-card" style={{ maxWidth: 800 }}>
+        {isChairman && (
+          <div style={{ background: '#FFF2E8', border: '1px solid #FFC069', padding: '12px 16px', borderRadius: 8, marginBottom: 20 }}>
+            <span style={{ color: '#D46B08', fontWeight: 600 }}>⚠️ Read-Only Mode:</span> As Chairman, you have auditor access and cannot submit or edit load postings.
+          </div>
+        )}
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           size="large"
           requiredMark="optional"
+          disabled={isChairman}
         >
           <Row gutter={20}>
             <Col xs={24} md={12}>
@@ -115,6 +132,7 @@ export default function LoadPostingScreen() {
                       onClick={() => openMap('source')}
                       className="kkp-text-navy"
                       style={{ padding: 0, height: 'auto', fontWeight: 700 }}
+                      disabled={isChairman}
                     >
                       Map
                     </Button>
@@ -126,7 +144,7 @@ export default function LoadPostingScreen() {
                   showSearch
                   placeholder={t('postLoad.selectSource')}
                   options={cityOptions}
-                  suffixIcon={<EnvironmentOutlined style={{ color: '#1A237E' }} />}
+                  suffixIcon={<EnvironmentOutlined style={{ color: '#0B4C8C' }} />}
                   filterOption={(input, option) =>
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
@@ -147,6 +165,7 @@ export default function LoadPostingScreen() {
                       onClick={() => openMap('destination')}
                       className="kkp-text-navy"
                       style={{ padding: 0, height: 'auto', fontWeight: 700 }}
+                      disabled={isChairman}
                     >
                       Map
                     </Button>
@@ -158,7 +177,7 @@ export default function LoadPostingScreen() {
                   showSearch
                   placeholder={t('postLoad.selectDest')}
                   options={cityOptions}
-                  suffixIcon={<EnvironmentOutlined style={{ color: '#1A237E' }} />}
+                  suffixIcon={<EnvironmentOutlined style={{ color: '#0B4C8C' }} />}
                   filterOption={(input, option) =>
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
@@ -177,7 +196,7 @@ export default function LoadPostingScreen() {
               >
                 <DatePicker
                   style={{ width: '100%', borderRadius: 8 }}
-                  suffixIcon={<CalendarOutlined style={{ color: '#1A237E' }} />}
+                  suffixIcon={<CalendarOutlined style={{ color: '#0B4C8C' }} />}
                   format="DD/MM/YYYY"
                 />
               </Form.Item>
@@ -202,7 +221,7 @@ export default function LoadPostingScreen() {
               <Form.Item
                 name="weight"
                 label={<span className="kkp-text-muted kkp-weight-600">{t('postLoad.weight')}</span>}
-                rules={[{ required: true, message: t('postLoad.weight') }]}
+                rules={[{ required: true, message: t('postLoad.weight') || 'Please input weight' }]}
               >
                 <InputNumber
                   min={0.1}
@@ -216,21 +235,105 @@ export default function LoadPostingScreen() {
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                name="budget"
-                label={<span className="kkp-text-muted kkp-weight-600">{t('postLoad.budget')}</span>}
-                rules={[{ required: true, message: t('postLoad.budget') }]}
+                name="priceType"
+                label={<span className="kkp-text-muted kkp-weight-600">Price Option</span>}
+                initialValue="fixed"
               >
-                <InputNumber
-                  min={1000}
-                  max={500000}
-                  placeholder="e.g. 45000"
-                  style={{ width: '100%', borderRadius: 8 }}
-                  formatter={value => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value!.replace(/₹\s?|(,*)/g, '') as any}
-                />
+                <Radio.Group 
+                  optionType="button" 
+                  buttonStyle="solid" 
+                  style={{ width: '100%' }}
+                >
+                  <Radio.Button value="fixed" style={{ width: '50%', textAlign: 'center' }}>Fixed Price</Radio.Button>
+                  <Radio.Button value="per_ton" style={{ width: '50%', textAlign: 'center' }}>Price per Ton</Radio.Button>
+                </Radio.Group>
               </Form.Item>
             </Col>
           </Row>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => 
+              prevValues.priceType !== currentValues.priceType ||
+              prevValues.weight !== currentValues.weight
+            }
+          >
+            {({ getFieldValue }) => {
+              const priceType = getFieldValue('priceType') || 'fixed';
+              const weight = getFieldValue('weight') || 0;
+              
+              if (priceType === 'fixed') {
+                return (
+                  <Row gutter={20}>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        name="fixedAmount"
+                        label={<span className="kkp-text-muted kkp-weight-600">Fixed Price Amount (₹)</span>}
+                        rules={[{ required: true, message: 'Please input fixed price amount' }]}
+                      >
+                        <InputNumber
+                          min={1000}
+                          max={500000}
+                          placeholder="e.g. 45000"
+                          style={{ width: '100%', borderRadius: 8 }}
+                          formatter={value => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={value => value!.replace(/₹\s?|(,*)/g, '') as any}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                );
+              } else {
+                return (
+                  <Row gutter={20}>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        name="ratePerTon"
+                        label={<span className="kkp-text-muted kkp-weight-600">Rate per Ton (₹/Ton)</span>}
+                        rules={[{ required: true, message: 'Please input rate per ton' }]}
+                      >
+                        <InputNumber
+                          min={100}
+                          max={50000}
+                          placeholder="e.g. 1500"
+                          style={{ width: '100%', borderRadius: 8 }}
+                          formatter={value => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={value => value!.replace(/₹\s?|(,*)/g, '') as any}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label={<span className="kkp-text-muted kkp-weight-600">Estimated Total (Calculated)</span>}
+                      >
+                        <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.ratePerTon !== currentValues.ratePerTon}>
+                          {() => {
+                            const rate = getFieldValue('ratePerTon') || 0;
+                            const total = rate * weight;
+                            return (
+                              <div style={{
+                                height: 40,
+                                lineHeight: '38px',
+                                padding: '0 12px',
+                                background: '#F9FAFB',
+                                border: '1px solid #D0D5DD',
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                color: '#0B4C8C',
+                                fontSize: 15
+                              }}>
+                                ₹ {total.toLocaleString('en-IN')}
+                              </div>
+                            );
+                          }}
+                        </Form.Item>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                );
+              }
+            }}
+          </Form.Item>
 
           <Form.Item
             name="notes"

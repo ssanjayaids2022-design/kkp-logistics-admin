@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Row, Col, Card as AntdCard, Typography, Tag, Space, Statistic, Skeleton, Progress,
+  Row, Col, Card as AntdCard, Typography, Tag, Space, Statistic, Skeleton, Progress, Table,
 } from 'antd';
 const Card = AntdCard as any;
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList,
+  BarChart, Bar, PieChart, Pie, Cell,
 } from 'recharts';
 import {
   BarChartOutlined, ReloadOutlined, CheckCircleOutlined, ClockCircleOutlined,
-  ApartmentOutlined, ThunderboltOutlined,
+  ApartmentOutlined, ThunderboltOutlined, FileTextOutlined,
 } from '@ant-design/icons';
 import {
   fetchLoadData,
   type LoadData,
 } from '../services/analyticsService';
 import { useLanguage } from '../context/LanguageContext';
+import { loadPerformanceData, loadBiddingMetrics } from '../data/mockData';
 
 const { Title, Text } = Typography;
 
@@ -29,7 +30,7 @@ const REFRESH_INTERVAL = 60_000;
 
 // ── Metric Card ───────────────────────────────────────────────────────────────
 function MetricCard({
-  title, value, suffix = '', color = '#1A237E', icon,
+  title, value, suffix = '', color = '#0B4C8C', icon,
 }: {
   title: string; value: number | string; suffix?: string; color?: string; icon: React.ReactNode;
 }) {
@@ -68,7 +69,7 @@ function FunnelStep({ stage, count, pct, color, isLast }: {
   );
 }
 
-const FUNNEL_COLORS = ['#1A237E', '#283593', '#3949AB', '#5C6BC0', '#10B981'];
+const FUNNEL_COLORS = ['#0B4C8C', '#0E60B0', '#3b82f6', '#93c5fd', '#10B981'];
 
 export default function LoadAnalytics() {
   const { t } = useLanguage();
@@ -93,13 +94,80 @@ export default function LoadAnalytics() {
     return () => clearInterval(timer);
   }, [load]);
 
+  // Columns for Load Performance Table
+  const loadPerformanceColumns = [
+    {
+      title: 'Load ID',
+      dataIndex: 'loadId',
+      key: 'loadId',
+      render: (text: string) => <Text strong>{text}</Text>,
+    },
+    {
+      title: 'Route',
+      dataIndex: 'route',
+      key: 'route',
+    },
+    {
+      title: 'Cargo Type',
+      dataIndex: 'cargoType',
+      key: 'cargoType',
+    },
+    {
+      title: 'Base Price',
+      dataIndex: 'basePrice',
+      key: 'basePrice',
+      render: (val: number) => `₹${val.toLocaleString()}`,
+    },
+    {
+      title: 'Bids Count',
+      dataIndex: 'bidCount',
+      key: 'bidCount',
+      render: (val: number) => <Tag color="blue">{val} bids</Tag>,
+    },
+    {
+      title: 'Winning Bid',
+      dataIndex: 'winningBid',
+      key: 'winningBid',
+      render: (val: number) => `₹${val.toLocaleString()}`,
+    },
+    {
+      title: 'Bid Range',
+      dataIndex: 'bidRange',
+      key: 'bidRange',
+      render: (text: string) => <Text type="secondary" style={{ fontSize: 12 }}>{text}</Text>,
+    },
+    {
+      title: 'Time to Assign',
+      dataIndex: 'timeToAssign',
+      key: 'timeToAssign',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'default';
+        if (status === 'Completed' || status === 'Delivered') color = 'success';
+        else if (status === 'Active') color = 'processing';
+        else if (status === 'In Transit') color = 'warning';
+        else if (status === 'Delayed') color = 'error';
+        return <Tag color={color}>{status}</Tag>;
+      },
+    },
+    {
+      title: 'Posted Date',
+      dataIndex: 'postedDate',
+      key: 'postedDate',
+    },
+  ];
+
   return (
     <div>
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #1A237E, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #0B4C8C, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <BarChartOutlined style={{ color: '#fff', fontSize: 18 }} />
             </div>
             <Title level={4} style={{ margin: 0, color: '#101828' }}>{t('analytics.load')}</Title>
@@ -108,7 +176,7 @@ export default function LoadAnalytics() {
             Load lifecycle efficiency · Admin + Super Admin · Last: {lastRefresh.toLocaleTimeString()}
           </Text>
         </div>
-        <Tag color="#1A237E" style={{ borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }} onClick={() => load()}>
+        <Tag color="#0B4C8C" style={{ borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }} onClick={() => load()}>
           <ReloadOutlined /> Refresh
         </Tag>
       </div>
@@ -126,22 +194,68 @@ export default function LoadAnalytics() {
 
           {/* ── Metrics ── */}
           <Col xs={24} sm={12} lg={6}>
-            <MetricCard title="Loads Posted" value={data.metrics.loadsPosted} icon={<ApartmentOutlined />} color="#1A237E" />
+            <MetricCard title="Loads Posted" value={data.metrics.loadsPosted} icon={<ApartmentOutlined />} color="#0B4C8C" />
           </Col>
           <Col xs={24} sm={12} lg={6}>
             <MetricCard title="Loads Matched" value={data.metrics.loadsMatched} icon={<CheckCircleOutlined />} color="#10B981" />
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <MetricCard title="Avg Match Time" value={data.metrics.avgMatchTimeHours} suffix=" hrs" icon={<ClockCircleOutlined />} color="#CA9D50" />
+            <MetricCard title="Avg Match Time" value={data.metrics.avgMatchTimeHours} suffix=" hrs" icon={<ClockCircleOutlined />} color="#F4811F" />
           </Col>
           <Col xs={24} sm={12} lg={6}>
             <MetricCard title="Rejection Rate" value={`${data.metrics.rejectionRate}%`} icon={<ThunderboltOutlined />} color="#EF4444" />
           </Col>
 
+          {/* ── Key Metrics Panel ── */}
+          <Col xs={24}>
+            <Card bordered={false} style={cardStyle} title={
+              <Space>
+                <ThunderboltOutlined style={{ color: '#FFC20E' }} />
+                <Text strong>Bidding Competition & Assignment Key Metrics Panel</Text>
+              </Space>
+            }>
+              <Row gutter={[24, 24]}>
+                <Col xs={24} sm={12} md={6}>
+                  <Statistic
+                    title="Average Bids per Load"
+                    value={loadBiddingMetrics.avgBidsPerLoad}
+                    precision={1}
+                    valueStyle={{ color: '#0B4C8C', fontWeight: 800 }}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Statistic
+                    title="Avg Bid vs Budget Difference"
+                    value={loadBiddingMetrics.avgBidVsBaseDiff}
+                    suffix="%"
+                    precision={1}
+                    valueStyle={{ color: '#10B981', fontWeight: 800 }}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Statistic
+                    title="Bid Acceptance Rate"
+                    value={loadBiddingMetrics.bidAcceptanceRate}
+                    suffix="%"
+                    precision={1}
+                    valueStyle={{ color: '#F4811F', fontWeight: 800 }}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <Statistic
+                    title="Avg Bid-to-Assignment Time"
+                    value={loadBiddingMetrics.bidToAssignmentTime}
+                    valueStyle={{ color: '#7A5AF8', fontWeight: 800 }}
+                  />
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+
           {/* ── Load Lifecycle Funnel ── */}
           <Col xs={24} lg={10}>
             <Card bordered={false} style={cardStyle} title={
-              <Space><ApartmentOutlined style={{ color: '#1A237E' }} /><Text strong>Load Lifecycle Funnel</Text></Space>
+              <Space><ApartmentOutlined style={{ color: '#0B4C8C' }} /><Text strong>Load Lifecycle Funnel</Text></Space>
             }>
               <div style={{ padding: '8px 0' }}>
                 {data.funnel.map((stage, i) => (
@@ -169,23 +283,23 @@ export default function LoadAnalytics() {
               {/* Matching Performance */}
               <Col xs={24}>
                 <Card bordered={false} style={cardStyle} title={
-                  <Space><ThunderboltOutlined style={{ color: '#CA9D50' }} /><Text strong>Matching Performance</Text></Space>
+                  <Space><ThunderboltOutlined style={{ color: '#FFC20E' }} /><Text strong>Matching Performance</Text></Space>
                 }>
                   <Row gutter={24} align="middle">
                     <Col xs={24} sm={12}>
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                           <Text style={{ fontSize: 13, color: '#344054' }}>Auto Match</Text>
-                          <Text strong style={{ color: '#1A237E' }}>{data.matchingPerf.autoMatch}%</Text>
+                          <Text strong style={{ color: '#0B4C8C' }}>{data.matchingPerf.autoMatch}%</Text>
                         </div>
-                        <Progress percent={data.matchingPerf.autoMatch} strokeColor="#1A237E" trailColor="#F2F4F7" showInfo={false} strokeWidth={12} />
+                        <Progress percent={data.matchingPerf.autoMatch} strokeColor="#0B4C8C" trailColor="#F2F4F7" showInfo={false} strokeWidth={12} />
                       </div>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                           <Text style={{ fontSize: 13, color: '#344054' }}>Manual Match</Text>
-                          <Text strong style={{ color: '#CA9D50' }}>{data.matchingPerf.manualMatch}%</Text>
+                          <Text strong style={{ color: '#FFC20E' }}>{data.matchingPerf.manualMatch}%</Text>
                         </div>
-                        <Progress percent={data.matchingPerf.manualMatch} strokeColor="#CA9D50" trailColor="#F2F4F7" showInfo={false} strokeWidth={12} />
+                        <Progress percent={data.matchingPerf.manualMatch} strokeColor="#FFC20E" trailColor="#F2F4F7" showInfo={false} strokeWidth={12} />
                       </div>
                     </Col>
                     <Col xs={24} sm={12}>
@@ -202,8 +316,8 @@ export default function LoadAnalytics() {
                             outerRadius={60}
                             dataKey="value"
                           >
-                            <Cell fill="#1A237E" />
-                            <Cell fill="#CA9D50" />
+                            <Cell fill="#0B4C8C" />
+                            <Cell fill="#FFC20E" />
                           </Pie>
                           <Tooltip formatter={(v: number) => [`${v}%`, '']} contentStyle={{ borderRadius: 10, fontSize: 12 }} />
                         </PieChart>
@@ -274,9 +388,9 @@ export default function LoadAnalytics() {
                   <XAxis type="number" tick={{ fontSize: 11, fill: '#667085' }} />
                   <YAxis type="category" dataKey="route" tick={{ fontSize: 11, fill: '#475467' }} width={120} />
                   <Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} formatter={(v: number) => [v, 'Loads']} />
-                  <Bar dataKey="demand" name="Loads" fill="#1A237E" radius={[0, 6, 6, 0]}>
+                  <Bar dataKey="demand" name="Loads" fill="#0B4C8C" radius={[0, 6, 6, 0]}>
                     {data.routeDemand.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? '#CA9D50' : '#1A237E'} fillOpacity={1 - i * 0.12} />
+                      <Cell key={i} fill={i === 0 ? '#F4811F' : '#0B4C8C'} fillOpacity={1 - i * 0.12} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -284,10 +398,32 @@ export default function LoadAnalytics() {
             </Card>
           </Col>
 
+          {/* ── Load Performance Table ── */}
+          <Col xs={24}>
+            <Card
+              bordered={false}
+              style={cardStyle}
+              title={
+                <Space>
+                  <FileTextOutlined style={{ color: '#0B4C8C' }} />
+                  <Text strong>Load Assignment Performance Register</Text>
+                </Space>
+              }
+            >
+              <Table
+                columns={loadPerformanceColumns}
+                dataSource={loadPerformanceData}
+                pagination={{ pageSize: 5 }}
+                scroll={{ x: 'max-content' }}
+                className="kkp-table"
+              />
+            </Card>
+          </Col>
+
           {/* ── Peak Booking Time ── */}
           <Col xs={24}>
             <Card bordered={false} style={cardStyle} title={
-              <Space><ThunderboltOutlined style={{ color: '#1A237E' }} /><Text strong>Peak Booking Time Analysis</Text></Space>
+              <Space><ThunderboltOutlined style={{ color: '#0B4C8C' }} /><Text strong>Peak Booking Time Analysis</Text></Space>
             }>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={data.peakBooking} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
@@ -297,14 +433,14 @@ export default function LoadAnalytics() {
                   <Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} formatter={(v: number) => [v, 'Bookings']} />
                   <Bar dataKey="count" name="Bookings" radius={[4, 4, 0, 0]}>
                     {data.peakBooking.map((p, i) => (
-                      <Cell key={i} fill={p.count >= 70 ? '#CA9D50' : p.count >= 50 ? '#1A237E' : '#ADB5BD'} />
+                      <Cell key={i} fill={p.count >= 70 ? '#FFC20E' : p.count >= 50 ? '#0B4C8C' : '#ADB5BD'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
-                <Space><div style={{ width: 12, height: 12, background: '#CA9D50', borderRadius: 3 }} /><Text style={{ fontSize: 12, color: '#667085' }}>Peak (≥70)</Text></Space>
-                <Space><div style={{ width: 12, height: 12, background: '#1A237E', borderRadius: 3 }} /><Text style={{ fontSize: 12, color: '#667085' }}>High (50-69)</Text></Space>
+                <Space><div style={{ width: 12, height: 12, background: '#FFC20E', borderRadius: 3 }} /><Text style={{ fontSize: 12, color: '#667085' }}>Peak (≥70)</Text></Space>
+                <Space><div style={{ width: 12, height: 12, background: '#0B4C8C', borderRadius: 3 }} /><Text style={{ fontSize: 12, color: '#667085' }}>High (50-69)</Text></Space>
                 <Space><div style={{ width: 12, height: 12, background: '#ADB5BD', borderRadius: 3 }} /><Text style={{ fontSize: 12, color: '#667085' }}>Normal</Text></Space>
               </div>
             </Card>

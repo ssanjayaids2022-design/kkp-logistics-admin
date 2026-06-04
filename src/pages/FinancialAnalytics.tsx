@@ -31,7 +31,7 @@ const REFRESH_INTERVAL = 60_000;
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({
-  title, value, prefix = '', suffix = '', color = '#1A237E', icon, trend, trendUp,
+  title, value, prefix = '', suffix = '', color = '#0B4C8C', icon, trend, trendUp,
 }: {
   title: string;
   value: string | number;
@@ -72,7 +72,7 @@ const driverColumns = [
   { title: '#', render: (_: unknown, __: unknown, i: number) => i + 1, width: 36 },
   { title: 'Driver', dataIndex: 'name', key: 'name', render: (n: string) => <Text strong style={{ fontSize: 13 }}>{n}</Text> },
   { title: 'Route', dataIndex: 'route', key: 'route', render: (r: string) => <Text style={{ fontSize: 12, color: '#667085' }}>{r}</Text> },
-  { title: 'Loads', dataIndex: 'loads', key: 'loads', render: (l: number) => <Tag color="#1A237E" style={{ fontWeight: 700 }}>{l}</Tag> },
+  { title: 'Loads', dataIndex: 'loads', key: 'loads', render: (l: number) => <Tag color="#0B4C8C" style={{ fontWeight: 700 }}>{l}</Tag> },
   {
     title: 'Revenue',
     dataIndex: 'revenue',
@@ -120,7 +120,7 @@ export default function FinancialAnalytics() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #CA9D50, #E8B86D)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #F4811F, #FFC20E)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FundOutlined style={{ color: '#fff', fontSize: 18 }} />
             </div>
             <Title level={4} style={{ margin: 0, color: '#101828' }}>{t('analytics.financial')}</Title>
@@ -129,7 +129,7 @@ export default function FinancialAnalytics() {
             Real-time financial visibility · Super Admin only · Last: {lastRefresh.toLocaleTimeString()}
           </Text>
         </div>
-        <Tag color="#CA9D50" style={{ borderRadius: 8, padding: '4px 10px', cursor: 'pointer', color: '#fff', border: 'none' }} onClick={() => load()}>
+        <Tag color="#F4811F" style={{ borderRadius: 8, padding: '4px 10px', cursor: 'pointer', color: '#fff', border: 'none' }} onClick={() => load()}>
           <ReloadOutlined /> Refresh
         </Tag>
       </div>
@@ -159,7 +159,7 @@ export default function FinancialAnalytics() {
               title="Platform Commission"
               value={`₹${(data.kpis.platformCommission / 1000).toFixed(0)}K`}
               icon={<FundOutlined />}
-              color="#1A237E"
+              color="#0B4C8C"
               trend="+10.2%"
               trendUp
             />
@@ -169,7 +169,7 @@ export default function FinancialAnalytics() {
               title="Avg Revenue / Load"
               value={`₹${data.kpis.avgRevenuePerLoad.toLocaleString('en-IN')}`}
               icon={<RiseOutlined />}
-              color="#CA9D50"
+              color="#F4811F"
               trend="+5.8%"
               trendUp
             />
@@ -188,18 +188,18 @@ export default function FinancialAnalytics() {
           {/* ── Revenue Trend ── */}
           <Col xs={24} xl={16}>
             <Card bordered={false} style={cardStyle} title={
-              <Space><RiseOutlined style={{ color: '#1A237E' }} /><Text strong>Revenue & Commission Trend</Text></Space>
+              <Space><RiseOutlined style={{ color: '#0B4C8C' }} /><Text strong>Revenue & Commission Trend</Text></Space>
             }>
               <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={data.revenueTrend} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#1A237E" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#1A237E" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#0B4C8C" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#0B4C8C" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="commGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#CA9D50" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#CA9D50" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#FFC20E" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#FFC20E" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F2F4F7" />
@@ -210,8 +210,8 @@ export default function FinancialAnalytics() {
                     formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, '']}
                   />
                   <Legend />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#1A237E" fill="url(#revGrad)" strokeWidth={2.5} />
-                  <Area type="monotone" dataKey="commission" name="Commission" stroke="#CA9D50" fill="url(#commGrad)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#0B4C8C" fill="url(#revGrad)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="commission" name="Commission" stroke="#FFC20E" fill="url(#commGrad)" strokeWidth={2.5} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
@@ -268,7 +268,7 @@ export default function FinancialAnalytics() {
                     contentStyle={{ borderRadius: 10, fontSize: 12 }}
                     formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, 'Revenue']}
                   />
-                  <Bar dataKey="revenue" name="Revenue" fill="#1A237E" radius={[0, 6, 6, 0]} />
+                  <Bar dataKey="revenue" name="Revenue" fill="#0B4C8C" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -301,7 +301,7 @@ export default function FinancialAnalytics() {
               style={cardStyle}
               title={
                 <Space>
-                  <TrophyOutlined style={{ color: '#CA9D50' }} />
+                  <TrophyOutlined style={{ color: '#F4811F' }} />
                   <Text strong>Top Revenue Drivers</Text>
                 </Space>
               }

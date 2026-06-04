@@ -22,6 +22,9 @@ export interface Load {
   assignedDriver?: string;
   notes?: string;
   distance?: string;
+  priceType?: 'fixed' | 'per_ton';
+  ratePerTon?: number;
+  fixedAmount?: number;
 }
 
 export interface Driver {
@@ -79,7 +82,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'manager' | 'operator';
+  role: 'CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN';
   avatar?: string;
 }
 
@@ -95,7 +98,9 @@ export interface LoadFormData {
   pickupDate: string;
   vehicleType: string;
   weight: number;
-  budget: number;
+  priceType: 'fixed' | 'per_ton';
+  fixedAmount?: number;
+  ratePerTon?: number;
   notes: string;
 }
 
