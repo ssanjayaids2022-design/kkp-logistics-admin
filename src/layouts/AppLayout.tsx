@@ -461,8 +461,8 @@ export default function AppLayout() {
             gap: 6,
             padding: '6px 12px',
             borderRadius: 8,
-            background: isChairman ? 'rgba(244,129,31,0.08)' : isManager ? 'rgba(10,85,165,0.06)' : 'rgba(14,165,233,0.06)',
-            border: `1px solid ${isChairman ? 'rgba(244,129,31,0.25)' : isManager ? 'rgba(10,85,165,0.15)' : 'rgba(14,165,233,0.15)'}`,
+            background: isChairman ? 'rgba(244,129,31,0.08)' : isManager ? 'rgba(10,85,165,0.06)' : isTechAdmin ? 'rgba(124,58,237,0.08)' : 'rgba(14,165,233,0.06)',
+            border: `1px solid ${isChairman ? 'rgba(244,129,31,0.25)' : isManager ? 'rgba(10,85,165,0.15)' : isTechAdmin ? 'rgba(124,58,237,0.25)' : 'rgba(14,165,233,0.15)'}`,
           }}>
             {isChairman && <CrownOutlined style={{ color: '#FFC20E', fontSize: 12 }} />}
             <Text style={{ fontSize: 11, fontWeight: 700, color: roleBadgeColor, letterSpacing: '0.08em' }}>

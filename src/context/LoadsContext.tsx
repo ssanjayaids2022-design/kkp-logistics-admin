@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Load } from '../types';
 import { apiService, type CreateLoadInput, type LoadPricingPatch } from '../services/apiService';
+import { useAuth } from './AuthContext';
+import { logActivity } from '../services/activityLog';
 
 interface LoadsContextType {
   loads: Load[];
@@ -17,9 +19,12 @@ const LoadsContext = createContext<LoadsContextType | undefined>(undefined);
 const POLL_INTERVAL_MS = 8000;
 
 export function LoadsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [loads, setLoads] = useState<Load[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const actor = () => ({ user: user?.name || 'Admin', role: user?.role || 'MANAGER' as const });
 
   const refresh = useCallback(async () => {
     try {
@@ -60,12 +65,26 @@ export function LoadsProvider({ children }: { children: ReactNode }) {
   const addLoad = async (input: CreateLoadInput): Promise<Load> => {
     const created = await apiService.createLoad(input);
     setLoads(prev => [created, ...prev]);
+    logActivity({
+      ...actor(),
+      type: 'load_posted',
+      actionType: 'LOAD_ACTION',
+      message: `Posted load ${created.id} (${created.source} → ${created.destination})`,
+      description: `Created new shipment load ${created.id} (${created.source} → ${created.destination})`,
+    });
     return created;
   };
 
   const cancelLoad = async (id: string): Promise<void> => {
     const updated = await apiService.cancelLoad(id);
     setLoads(prev => prev.map(l => (l.id === id ? updated : l)));
+    logActivity({
+      ...actor(),
+      type: 'load_cancelled',
+      actionType: 'LOAD_ACTION',
+      message: `Cancelled load ${id}`,
+      description: `Cancelled shipment load ${id}`,
+    });
   };
 
   const updatePricing = async (id: string, patch: LoadPricingPatch): Promise<void> => {

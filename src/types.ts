@@ -41,7 +41,6 @@ export interface Driver {
   vehicleType: string;
   vehicleNumber: string;
   licenseNumber: string;
-  rating: number;
   totalTrips: number;
   status: DriverStatus;
   documentsStatus: {
@@ -67,7 +66,6 @@ export interface Bid {
   loadId: string;
   driverId: string;
   driverName: string;
-  driverRating: number;
   vehicleType: string;
   vehicleNumber: string;
   price: number;

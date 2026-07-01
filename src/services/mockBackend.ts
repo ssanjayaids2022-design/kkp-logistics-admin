@@ -79,7 +79,6 @@ export const mockBackend = {
       vehicleType: input.vehicleType,
       vehicleNumber: input.vehicleNumber,
       licenseNumber: '—',
-      rating: 0,
       totalTrips: 0,
       status: 'pending_approval',
       documentsStatus: {
@@ -140,12 +139,11 @@ export const mockBackend = {
         const engaged = bid ? ('quote' as const) : null;
         if (engaged) { score += 30; reasons.push('raised hand'); }
         if (d.vehicleType === load.vehicleType) { score += 10; } else { reasons.push('other vehicle'); }
-        if (d.rating > 0) { score += Math.round(d.rating * 4); reasons.push(`${d.rating}★`); }
         if (d.totalTrips > 0) { score += Math.round(Math.min(d.totalTrips, 50) / 5); reasons.push(`${d.totalTrips} trips`); }
         return {
           driverId: d.id, name: d.name, phone: d.phone,
           vehicleType: d.vehicleType, vehicleNumber: d.vehicleNumber,
-          region: d.region ?? '—', rating: d.rating, trips: d.totalTrips,
+          region: d.region ?? '—', trips: d.totalTrips,
           engaged, quoteAmount: bid ? bid.price : null, score, reasons,
           isAssigned: load.assignedDriver === d.id,
         };

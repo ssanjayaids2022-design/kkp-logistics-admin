@@ -11,6 +11,7 @@ import {
   CheckCircleOutlined,
   SyncOutlined,
   FileAddOutlined,
+  CloseCircleOutlined,
   TeamOutlined,
   AuditOutlined,
   FundOutlined,
@@ -24,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip,
-  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend, LineChart, Line, Area, AreaChart
+  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend, Area, AreaChart
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
@@ -36,18 +37,20 @@ import type { Load } from '../types';
 import {
   revenueData,
   recentActivity,
-  dailyTripCompletionsTrend,
   topRoutesByVolume,
 } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
+import { useActivities, relativeTime } from '../services/activityLog';
 
 const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
 
 const activityIcons: Record<string, React.ReactNode> = {
   load_posted: <FileAddOutlined style={{ color: '#0B4C8C' }} />,
+  load_cancelled: <CloseCircleOutlined style={{ color: '#F04438' }} />,
   bid_received: <ShoppingOutlined style={{ color: '#F4811F' }} />,
   driver_assigned: <TeamOutlined style={{ color: '#0B4C8C' }} />,
+  driver_added: <TeamOutlined style={{ color: '#0B4C8C' }} />,
   delivery_completed: <CheckCircleOutlined style={{ color: '#12B76A' }} />,
   payment_processed: <DollarOutlined style={{ color: '#12B76A' }} />,
 };
@@ -132,6 +135,7 @@ export default function DashboardScreen() {
   const { t } = useLanguage();
   const { user, can } = useAuth();
   const { loads, updatePricing } = useLoads();
+  const liveActivity = useActivities();
 
   type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
   const [pricing, setPricing] = useState<Record<string, Draft>>({});
@@ -248,7 +252,6 @@ export default function DashboardScreen() {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [revenueChartType, setRevenueChartType] = useState<'bar' | 'area'>('bar');
-  const [tripChartType, setTripChartType] = useState<'line' | 'area'>('line');
   const [drillDownModal, setDrillDownModal] = useState<{ title: string; content: React.ReactNode } | null>(null);
 
   // Simulated live metrics with slight random variation after refresh
@@ -305,8 +308,19 @@ export default function DashboardScreen() {
     return list.filter(c => c.visible);
   }, [metrics, isLoadAdmin, isTechAdmin]);
 
-  const timelineItems = useMemo(() =>
-    recentActivity.slice(0, 6).map((item) => ({
+  // Live in-app events first (posting/cancelling loads, …), then seed activity.
+  const timelineItems = useMemo(() => {
+    const liveItems = liveActivity.map((a) => ({
+      dot: activityIcons[a.type] || <SyncOutlined />,
+      children: (
+        <div className="kkp-mt-4">
+          <Text className="kkp-text-dark" style={{ fontSize: 13 }}>{a.message}</Text>
+          <br />
+          <Text className="kkp-text-drab" style={{ fontSize: 11 }}>{relativeTime(a.at)}</Text>
+        </div>
+      ),
+    }));
+    const seedItems = recentActivity.slice(0, Math.max(0, 6 - liveItems.length)).map((item) => ({
       dot: activityIcons[item.type] || <SyncOutlined />,
       children: (
         <div className="kkp-mt-4">
@@ -315,8 +329,9 @@ export default function DashboardScreen() {
           <Text className="kkp-text-drab" style={{ fontSize: 11 }}>{item.time}</Text>
         </div>
       ),
-    })),
-  [recentActivity]);
+    }));
+    return [...liveItems.slice(0, 6), ...seedItems];
+  }, [liveActivity]);
 
   const adminAuditItems = useMemo(() => [
     { dot: <SafetyCertificateOutlined style={{ color: '#FFC20E' }} />, children: <div className="kkp-mt-4"><Text className="kkp-text-dark" style={{ fontSize: 13 }}>Super Admin updated Access Matrix</Text><br /><Text className="kkp-text-drab" style={{ fontSize: 11 }}>15 mins ago</Text></div> },
@@ -491,49 +506,6 @@ export default function DashboardScreen() {
                   </div>
                 ))}
               </div>
-            </div>
-          </Card>
-        </Col>
-
-        {/* Line / Area Chart — Trip Completions */}
-        <Col xs={24} lg={12} xl={16}>
-          <Card
-            title={<span className="kkp-text-navy kkp-font-manrope kkp-weight-700">Daily Trip Completions (Last 30 Days)</span>}
-            className="kkp-card"
-            styles={{ body: { padding: '16px' } }}
-            extra={
-              <Space size={4}>
-                <Button size="small" type={tripChartType === 'line' ? 'primary' : 'default'} onClick={() => setTripChartType('line')} style={{ borderRadius: 6, fontSize: 11 }}>Line</Button>
-                <Button size="small" type={tripChartType === 'area' ? 'primary' : 'default'} onClick={() => setTripChartType('area')} style={{ borderRadius: 6, fontSize: 11 }}>Area</Button>
-              </Space>
-            }
-          >
-            <div style={{ height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                {tripChartType === 'area' ? (
-                  <AreaChart data={dailyTripCompletionsTrend} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="tripGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0B4C8C" stopOpacity={0.18} />
-                        <stop offset="95%" stopColor="#0B4C8C" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2F4F7" />
-                    <XAxis dataKey="date" tick={{ fill: '#667085', fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: '#667085', fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <ChartTooltip contentStyle={{ borderRadius: 8 }} formatter={(v) => [v, 'Completed Trips']} />
-                    <Area type="monotone" dataKey="trips" stroke="#0B4C8C" strokeWidth={2.5} fill="url(#tripGrad)" dot={{ r: 3 }} activeDot={{ r: 5 }} animationDuration={700} />
-                  </AreaChart>
-                ) : (
-                  <LineChart data={dailyTripCompletionsTrend} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2F4F7" />
-                    <XAxis dataKey="date" tick={{ fill: '#667085', fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: '#667085', fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <ChartTooltip contentStyle={{ borderRadius: 8 }} formatter={(v) => [v, 'Completed Trips']} />
-                    <Line type="monotone" dataKey="trips" stroke="#0B4C8C" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} animationDuration={700} />
-                  </LineChart>
-                )}
-              </ResponsiveContainer>
             </div>
           </Card>
         </Col>

@@ -5,6 +5,8 @@ import { SearchOutlined, AuditOutlined, InfoCircleOutlined } from '@ant-design/i
 import PageHeader from '../components/PageHeader';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useActivities } from '../services/activityLog';
+import type { Role } from '../types';
 
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -13,11 +15,21 @@ interface AuditLog {
   key: string;
   timestamp: string;
   user: string;
-  role: 'CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN';
+  role: Role;
   actionType: 'LOAD_ACTION' | 'BID_ACTION' | 'PAYMENT_ACTION' | 'DRIVER_ACTION' | 'SECURITY_ACTION';
   description: string;
   ipAddress: string;
 }
+
+const roleTag = (role: Role) => {
+  const map: Record<Role, { color: string; label: string }> = {
+    CHAIRMAN: { color: 'gold', label: '👑 CHAIRMAN' },
+    MANAGER: { color: 'blue', label: '🛡️ MANAGER' },
+    LOAD_ADMIN: { color: 'cyan', label: '📋 LOAD ADMIN' },
+    TECH_ADMIN: { color: 'purple', label: '🛠️ TECH ADMIN' },
+  };
+  return map[role] || map.LOAD_ADMIN;
+};
 
 const mockAuditLogs: AuditLog[] = [
   { key: '1', timestamp: '2026-05-25 10:15:32', user: 'Chairman', role: 'CHAIRMAN', actionType: 'SECURITY_ACTION', description: 'Updated Access Control Matrix rules', ipAddress: '192.168.1.45' },
@@ -38,21 +50,34 @@ export default function AuditLogs() {
   const [adminFilter, setAdminFilter] = useState<string | null>(null);
 
   const isSuper = can('audit.all');
+  const live = useActivities();
+
+  // Live in-app events (newest first) mapped into audit rows, then seed history.
+  const liveLogs: AuditLog[] = live.map(a => ({
+    key: a.id,
+    timestamp: new Date(a.at).toLocaleString('en-GB'),
+    user: a.user,
+    role: a.role,
+    actionType: a.actionType,
+    description: a.description,
+    ipAddress: 'local',
+  }));
+  const allLogs: AuditLog[] = [...liveLogs, ...mockAuditLogs];
 
   // Distinct admins for the actor filter: from the logs + registered admin accounts.
   const adminNames = React.useMemo(() => {
-    const fromLogs = mockAuditLogs.map(l => l.user);
+    const fromLogs = allLogs.map(l => l.user);
     let fromUsers: string[] = [];
     try {
       fromUsers = (JSON.parse(localStorage.getItem('kkp_users') || '[]') as any[])
         .map(u => u?.data?.name).filter(Boolean);
     } catch { /* ignore */ }
     return Array.from(new Set([...fromLogs, ...fromUsers]));
-  }, []);
+  }, [live]);
 
   // Filter logs. If the logged in user is regular ADMIN, only display logs matching their name.
   // Super Admin can view all.
-  const filteredLogs = mockAuditLogs.filter(log => {
+  const filteredLogs = allLogs.filter(log => {
     // Role scope filtering
     const matchesUserScope = isSuper || log.user === user?.name;
 
@@ -81,8 +106,8 @@ export default function AuditLogs() {
       render: (_, record: AuditLog) => (
         <div>
           <Text strong style={{ color: '#101828', display: 'block' }}>{record.user}</Text>
-          <Tag color={record.role === 'CHAIRMAN' ? 'gold' : record.role === 'MANAGER' ? 'blue' : 'cyan'} style={{ fontSize: 10, borderRadius: 4 }}>
-            {record.role === 'CHAIRMAN' ? '👑 CHAIRMAN' : record.role === 'MANAGER' ? '🛡️ MANAGER' : '📋 LOAD ADMIN'}
+          <Tag color={roleTag(record.role).color} style={{ fontSize: 10, borderRadius: 4 }}>
+            {roleTag(record.role).label}
           </Tag>
         </div>
       ),

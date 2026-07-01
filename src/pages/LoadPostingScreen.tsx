@@ -11,8 +11,22 @@ import { useNotifications } from '../context/NotificationContext';
 import { useLanguage } from '../context/LanguageContext';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Modal, Button } from 'antd';
 import { useAuth } from '../context/AuthContext';
+
+// Handling / special-instruction options shown as a dropdown on the load form.
+const HANDLING_OPTIONS = [
+  'Standard (no special handling)',
+  'Fragile — handle with care',
+  'This side up / Keep upright',
+  'Temperature controlled (cold chain)',
+  'Perishable / Time-sensitive',
+  'Hazardous material (HAZMAT)',
+  'Do not stack',
+  'Liquid — secure against spill',
+  'Oversized / Over-dimensional',
+];
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore
@@ -45,6 +59,10 @@ export default function LoadPostingScreen() {
     // suffix (cities look like "Chennai, TN"). Fall back to the raw source.
     const region = (values.source.split(',').pop() || values.source).trim();
 
+    // Fold the handling instruction into the notes so it travels with the load.
+    const handling = values.handling && values.handling !== HANDLING_OPTIONS[0] ? values.handling : '';
+    const notes = [handling ? `Handling: ${handling}` : '', values.notes].filter(Boolean).join(' — ');
+
     try {
       const newLoad = await addLoad({
         source: values.source,
@@ -54,7 +72,7 @@ export default function LoadPostingScreen() {
         weight: values.weight,
         region,
         budget: calculatedBudget,
-        notes: values.notes,
+        notes,
       });
 
       addNotification({
@@ -341,6 +359,21 @@ export default function LoadPostingScreen() {
               }
             }}
           </Form.Item>
+
+          <Row gutter={20}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="handling"
+                label={<span className="kkp-text-muted kkp-weight-600">Handling / Fragile Instructions</span>}
+                initialValue={HANDLING_OPTIONS[0]}
+              >
+                <Select
+                  options={HANDLING_OPTIONS.map(o => ({ value: o, label: o }))}
+                  style={{ borderRadius: 8 }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item
             name="notes"

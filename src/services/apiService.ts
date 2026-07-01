@@ -49,7 +49,6 @@ export interface MatchCandidate {
   vehicleType: string;
   vehicleNumber: string;
   region: string;
-  rating: number;
   trips: number;
   engaged: 'quote' | 'interest' | null;
   quoteAmount: number | null;

@@ -281,19 +281,6 @@ export default function DriverApprovalScreen() {
       },
     },
     {
-      title: t('drivers.rating'),
-      dataIndex: 'rating',
-      key: 'rating',
-      width: 80,
-      responsive: ['lg'],
-      sorter: (a, b) => a.rating - b.rating,
-      render: (r) => (
-        <span className="kkp-text-yellow kkp-weight-700">
-          {r > 0 ? `★ ${r}` : '—'}
-        </span>
-      ),
-    },
-    {
       title: t('drivers.trips'),
       dataIndex: 'totalTrips',
       key: 'totalTrips',
@@ -373,7 +360,6 @@ export default function DriverApprovalScreen() {
       { header: 'Region', value: d => d.region || '' },
       { header: 'Location', value: d => d.location || '' },
       { header: 'Status', value: d => d.status },
-      { header: 'Rating', value: d => d.rating },
       { header: 'Docs Verified', value: d => `${Object.values(d.documentsStatus).filter(s => s === 'verified').length}/4` },
     ], filteredDrivers);
     message.success(`Exported ${filteredDrivers.length} driver(s) to CSV.`);

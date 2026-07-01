@@ -9,8 +9,11 @@ import { ROLES, ROLE_LABELS, PERMISSION_META, DEFAULT_ROLE_PERMISSIONS } from '.
 
 const { Text } = Typography;
 
-// Anti-lockout: the Technical Admin must always keep the matrix key.
-const isLockedCell = (role: Role, perm: Permission) => role === 'TECH_ADMIN' && perm === 'access.matrix.edit';
+// Chairman & Manager permissions are fixed — a Technical Admin may not alter
+// them (they can only tune Load Admin, and their own row minus the matrix key).
+const LOCKED_ROLES: Role[] = ['CHAIRMAN', 'MANAGER'];
+const isLockedCell = (role: Role, perm: Permission) =>
+  LOCKED_ROLES.includes(role) || (role === 'TECH_ADMIN' && perm === 'access.matrix.edit');
 
 const clone = (rp: RolePermissions): RolePermissions => ({
   CHAIRMAN: [...rp.CHAIRMAN], MANAGER: [...rp.MANAGER], LOAD_ADMIN: [...rp.LOAD_ADMIN], TECH_ADMIN: [...rp.TECH_ADMIN],
@@ -49,8 +52,13 @@ export default function AccessMatrix() {
   };
 
   const handleReset = () => {
-    setDraft(clone(DEFAULT_ROLE_PERMISSIONS));
-    message.info('Reverted to default permissions (not yet saved).');
+    // Reset the editable roles to defaults; keep Chairman & Manager as-is (locked).
+    setDraft(prev => ({
+      ...clone(DEFAULT_ROLE_PERMISSIONS),
+      CHAIRMAN: [...prev.CHAIRMAN],
+      MANAGER: [...prev.MANAGER],
+    }));
+    message.info('Load Admin & Technical Admin reverted to defaults (not yet saved).');
   };
 
   const columns = [
@@ -90,7 +98,7 @@ export default function AccessMatrix() {
     <div>
       <PageHeader
         title="Access Control Matrix"
-        subtitle="Toggle what each role can do — the single source of truth for permissions across the app"
+        subtitle="Tune Load Admin (and Technical Admin) permissions — Chairman & Manager are fixed"
         extra={editable && (
           <Space>
             <Button icon={<ReloadOutlined />} onClick={handleReset}>Reset defaults</Button>

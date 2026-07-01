@@ -117,7 +117,7 @@ export default function AdminManagement() {
       setEditingKey(null);
       form.resetFields();
       form.setFieldsValue({
-        role: 'ADMIN',
+        role: 'LOAD_ADMIN',
         scope: 'South Region (Chennai/Cbe)',
         password: 'admin123',
       });

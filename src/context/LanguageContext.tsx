@@ -132,7 +132,6 @@ const translations = {
   'drivers.searchPlaceholder': { en: 'Search drivers...', ta: 'ஓட்டுநர்களைத் தேடுக...' },
   'drivers.approve': { en: 'Approve', ta: 'ஒப்புதல்' },
   'drivers.documents': { en: 'Documents', ta: 'ஆவணங்கள்' },
-  'drivers.rating': { en: 'Rating', ta: 'மதிப்பீடு' },
   'drivers.trips': { en: 'Trips', ta: 'பயணங்கள்' },
   'drivers.details': { en: 'Details', ta: 'விவரங்கள்' },
 

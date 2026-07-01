@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card as AntdCard, Row, Col, Select, Button, Modal, Rate, Avatar, message, Alert, Tag, Empty, Typography, Popconfirm, Descriptions } from 'antd';
+import { Card as AntdCard, Row, Col, Select, Button, Modal, Avatar, message, Alert, Tag, Empty, Typography, Popconfirm, Descriptions } from 'antd';
 const Card = AntdCard as any;
 import { CheckOutlined, ThunderboltOutlined, UserAddOutlined, CloseOutlined, SwapOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -173,8 +173,7 @@ export default function MatchLoadScreen() {
                       <Text className="kkp-text-drab" style={{ fontSize: 8, letterSpacing: '0.08em' }}>SCORE</Text>
                     </div>
                   </div>
-                  <div className="kkp-flex-between kkp-items-center kkp-mb-8">
-                    <Rate disabled defaultValue={c.rating} allowHalf style={{ fontSize: 11, color: '#FFC20E' }} />
+                  <div className="kkp-mb-8">
                     <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>
                       <ThunderboltOutlined /> {c.engaged === 'quote' ? `Quoted ₹${(c.quoteAmount || 0).toLocaleString()}` : 'Raised hand'}
                     </Tag>

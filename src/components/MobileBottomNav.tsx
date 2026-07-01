@@ -8,19 +8,22 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function MobileBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { can } = useAuth();
 
+  // Only show tabs the current role can actually open (else tapping bounces back).
   const tabs = [
-    { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
-    { key: '/loads', icon: <CarOutlined />, label: t('nav.loads') },
-    { key: '/match', icon: <ThunderboltOutlined />, label: 'Match' },
-    { key: '/drivers', icon: <TeamOutlined />, label: t('nav.drivers') },
-    { key: '/payments', icon: <DollarOutlined />, label: t('nav.payments') },
-  ];
+    { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard'), show: true },
+    { key: '/loads', icon: <CarOutlined />, label: t('nav.loads'), show: can('loads.view') },
+    { key: '/match', icon: <ThunderboltOutlined />, label: 'Match', show: can('match.view') },
+    { key: '/drivers', icon: <TeamOutlined />, label: t('nav.drivers'), show: can('drivers.view') },
+    { key: '/payments', icon: <DollarOutlined />, label: t('nav.payments'), show: can('payments.view') },
+  ].filter(tab => tab.show);
 
   const isActive = (key: string) => {
     if (key === '/') return location.pathname === '/';
