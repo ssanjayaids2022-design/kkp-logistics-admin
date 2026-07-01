@@ -137,15 +137,14 @@ export const recentActivity: ActivityItem[] = [
 
 // ─── Vehicle Types ───────────────────────────────────────────────────────────
 
+// Must match the driver app's onboarding vocabulary
+// (6Ways web: OnboardingWizard VEHICLE_TYPES) so a posted load's vehicleType
+// can match a driver's vehicleType on the board filter. Keep these in sync.
 export const vehicleTypes = [
-  'Open Truck',
-  'Closed Body',
-  'Container 20ft',
-  'Container 40ft',
-  'Trailer',
-  'Refrigerated',
-  'Flatbed',
-  'Tanker',
+  'truck',
+  'mini-truck',
+  'trailer',
+  'container',
 ];
 
 // ─── Indian Cities for AutoComplete ──────────────────────────────────────────

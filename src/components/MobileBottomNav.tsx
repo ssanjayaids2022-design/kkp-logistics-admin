@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DashboardOutlined,
   CarOutlined,
-  AuditOutlined,
+  ThunderboltOutlined,
   TeamOutlined,
   DollarOutlined,
 } from '@ant-design/icons';
@@ -17,7 +17,7 @@ export default function MobileBottomNav() {
   const tabs = [
     { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') },
     { key: '/loads', icon: <CarOutlined />, label: t('nav.loads') },
-    { key: '/bids', icon: <AuditOutlined />, label: t('nav.bids') },
+    { key: '/match', icon: <ThunderboltOutlined />, label: 'Match' },
     { key: '/drivers', icon: <TeamOutlined />, label: t('nav.drivers') },
     { key: '/payments', icon: <DollarOutlined />, label: t('nav.payments') },
   ];

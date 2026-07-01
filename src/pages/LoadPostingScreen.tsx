@@ -36,36 +36,43 @@ export default function LoadPostingScreen() {
 
   const isChairman = user?.role === 'CHAIRMAN';
 
-  const onFinish = (values: any) => {
+  const onFinish = async (values: any) => {
     const calculatedBudget = values.priceType === 'per_ton'
       ? (values.ratePerTon * values.weight)
       : values.fixedAmount;
 
-    const newLoad = addLoad({
-      source: values.source,
-      destination: values.destination,
-      pickupDate: values.pickupDate.format('DD/MM/YYYY'), // Format dayjs to string
-      vehicleType: values.vehicleType,
-      weight: values.weight,
-      budget: calculatedBudget,
-      priceType: values.priceType,
-      ratePerTon: values.priceType === 'per_ton' ? values.ratePerTon : undefined,
-      fixedAmount: values.priceType === 'fixed' ? values.fixedAmount : undefined,
-    } as any);
+    // The backend requires `region`; derive it from the source city's state
+    // suffix (cities look like "Chennai, TN"). Fall back to the raw source.
+    const region = (values.source.split(',').pop() || values.source).trim();
 
-    addNotification({
-      title: 'Load Posted Successfully',
-      message: `Load ${newLoad.id} (${newLoad.source} → ${newLoad.destination}) is now live for bidding.`,
-      type: 'load',
-    });
+    try {
+      const newLoad = await addLoad({
+        source: values.source,
+        destination: values.destination,
+        pickupDate: values.pickupDate.format('YYYY-MM-DD'), // backend stores/sorts ISO dates
+        vehicleType: values.vehicleType,
+        weight: values.weight,
+        region,
+        budget: calculatedBudget,
+        notes: values.notes,
+      });
 
-    message.success(t('postLoad.success') || `Load posted successfully! ID: ${newLoad.id}`);
-    form.resetFields();
-    
-    // Navigate to load list to show it "need to show"
-    setTimeout(() => {
-      navigate('/loads');
-    }, 1000);
+      addNotification({
+        title: 'Load Posted Successfully',
+        message: `Load ${newLoad.id} (${newLoad.source} → ${newLoad.destination}) is now live for bidding.`,
+        type: 'load',
+      });
+
+      message.success(t('postLoad.success') || `Load posted successfully! ID: ${newLoad.id}`);
+      form.resetFields();
+
+      // Navigate to load list to show it "need to show"
+      setTimeout(() => {
+        navigate('/loads');
+      }, 1000);
+    } catch (e) {
+      message.error(`Failed to post load: ${e instanceof Error ? e.message : 'unknown error'}`);
+    }
   };
 
   const cityOptions = indianCities.map(city => ({ value: city, label: city }));

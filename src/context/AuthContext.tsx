@@ -1,12 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User } from '../types';
 
+export interface PasswordResetRequest {
+  id: string;
+  userId: string;
+  username: string;
+  name: string;
+  reason?: string;
+  at: string;
+  status: 'pending' | 'resolved';
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   login: (username: string, password: string) => boolean;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
+  changePassword: (userId: string, newPassword: string) => boolean;
+  requestPasswordReset: (username: string, reason?: string) => boolean;
   loading: boolean;
 }
 
@@ -21,28 +33,24 @@ const DEFAULT_USERS = [
   { username: 'priya', password: 'admin123', data: { id: 'USR-005', name: 'Priya Sharma', email: 'priya.s@kkptransports.com', role: 'LOAD_ADMIN' as const, scope: 'North Region (Delhi)', status: 'Suspended' } },
 ];
 
+// Seed default accounts when missing, but DO NOT wipe existing data — otherwise
+// an admin's changed password would reset on the next load. Only adds any
+// default account that isn't present.
 const initializeUsers = () => {
   const stored = localStorage.getItem('kkp_users');
-  let resetNeeded = false;
+  let users: any[] = [];
   if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      const chairmanUser = parsed.find((u: any) => u.username === 'chairman');
-      const managerUser = parsed.find((u: any) => u.username === 'manager');
-      const loadAdminUser = parsed.find((u: any) => u.username === 'loadadmin');
-      
-      if (!chairmanUser || chairmanUser.password !== 'chair123' ||
-          !managerUser || managerUser.password !== 'mgr123' ||
-          !loadAdminUser || loadAdminUser.password !== 'load123') {
-        resetNeeded = true;
-      }
-    } catch (e) {
-      resetNeeded = true;
-    }
+    try { users = JSON.parse(stored); } catch { users = []; }
   }
-  if (!stored || resetNeeded) {
+  if (!Array.isArray(users) || users.length === 0) {
     localStorage.setItem('kkp_users', JSON.stringify(DEFAULT_USERS));
+    return;
   }
+  let changed = false;
+  for (const d of DEFAULT_USERS) {
+    if (!users.find(u => u.username === d.username)) { users.push(d); changed = true; }
+  }
+  if (changed) localStorage.setItem('kkp_users', JSON.stringify(users));
 };
 
 
@@ -110,6 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (found.data.status === 'Suspended') {
         return false;
       }
+      // Record login time (manager can review these in Admin Management).
+      const lastLogin = new Date().toISOString();
+      found.data.lastLogin = lastLogin;
+      const withLogin = usersList.map((u: any) => (u.data.id === found.data.id ? found : u));
+      localStorage.setItem('kkp_users', JSON.stringify(withLogin));
+
       setIsAuthenticated(true);
       setUser(found.data);
       localStorage.setItem('kkp_auth_role', found.data.role);
@@ -117,6 +131,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     }
     return false;
+  };
+
+  // Manager-only password change (caller enforces role + chairman guard).
+  const changePassword = (userId: string, newPassword: string): boolean => {
+    const users = JSON.parse(localStorage.getItem('kkp_users') || '[]');
+    let ok = false;
+    const updated = users.map((u: any) => {
+      if (u.data.id === userId) { ok = true; return { ...u, password: newPassword }; }
+      return u;
+    });
+    if (ok) localStorage.setItem('kkp_users', JSON.stringify(updated));
+    return ok;
+  };
+
+  // An admin asks the manager to reset their password (stored as a request).
+  const requestPasswordReset = (username: string, reason?: string): boolean => {
+    const users = JSON.parse(localStorage.getItem('kkp_users') || '[]');
+    const id = (username || '').trim().toLowerCase();
+    const target = users.find((u: any) =>
+      u.username?.toLowerCase() === id || u.data?.email?.toLowerCase() === id);
+    if (!target) return false;
+    const reqs: PasswordResetRequest[] = JSON.parse(localStorage.getItem('kkp_pwd_requests') || '[]');
+    reqs.unshift({
+      id: `REQ-${Date.now()}`,
+      userId: target.data.id,
+      username: target.username,
+      name: target.data.name,
+      reason,
+      at: new Date().toISOString(),
+      status: 'pending',
+    });
+    localStorage.setItem('kkp_pwd_requests', JSON.stringify(reqs));
+    return true;
   };
 
   const logout = () => {
@@ -144,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, changePassword, requestPasswordReset, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -9,7 +9,9 @@ import LoginScreen from './pages/LoginScreen';
 import DashboardScreen from './pages/DashboardScreen';
 import LoadListScreen from './pages/LoadListScreen';
 import LoadPostingScreen from './pages/LoadPostingScreen';
-import BidComparisonScreen from './pages/BidComparisonScreen';
+import MatchScreen from './pages/MatchScreen';
+import MatchLoadScreen from './pages/MatchLoadScreen';
+import TrackingScreen from './pages/TrackingScreen';
 import DriverApprovalScreen from './pages/DriverApprovalScreen';
 import PaymentListScreen from './pages/PaymentListScreen';
 import ProfileScreen from './pages/ProfileScreen';
@@ -85,7 +87,9 @@ function AppRoutes() {
         <Route index element={<DashboardScreen />} />
         <Route path="loads" element={<LoadListScreen />} />
         <Route path="loads/new" element={<LoadPostingScreen />} />
-        <Route path="bids" element={<BidComparisonScreen />} />
+        <Route path="match" element={<MatchScreen />} />
+        <Route path="match/:loadId" element={<MatchLoadScreen />} />
+        <Route path="tracking" element={<TrackingScreen />} />
         <Route path="drivers" element={<DriverApprovalScreen />} />
         <Route
           path="payments"

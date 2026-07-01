@@ -25,6 +25,12 @@ export interface Load {
   priceType?: 'fixed' | 'per_ton';
   ratePerTon?: number;
   fixedAmount?: number;
+  // Admin pricing worksheet
+  quotedAmount?: number;   // price posted by KKP (base)
+  kkpPrice?: number;       // KKP's set price
+  bidAmount?: number | null;
+  offeredAmount?: number;  // driver's extra request
+  amountVisible?: boolean; // show the trip amount to drivers in the app
 }
 
 export interface Driver {
@@ -46,6 +52,14 @@ export interface Driver {
   };
   joinedDate: string;
   avatar?: string;
+  region?: string;
+  location?: string;       // driver-entered current city
+  documentUrls?: {         // viewable document files (data URLs / links)
+    license?: string;
+    insurance?: string;
+    registration?: string;
+    aadhar?: string;
+  };
 }
 
 export interface Bid {
@@ -76,6 +90,8 @@ export interface Payment {
   paidDate?: string;
   route: string;
   paymentMethod?: string;
+  isOutside?: boolean;   // recorded outside the system (cash / direct UPI / etc.)
+  notes?: string;
 }
 
 export interface User {

@@ -1,31 +1,23 @@
 import React, { ReactNode } from 'react';
 import { Typography } from 'antd';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface PageHeaderProps {
-  title: string;
+  // `title` is kept for compatibility but no longer rendered here — the page
+  // name now lives in the top app header. We only show the description + actions.
+  title?: string;
   subtitle?: string;
   extra?: ReactNode;
 }
 
-export default function PageHeader({ title, subtitle, extra }: PageHeaderProps) {
+export default function PageHeader({ subtitle, extra }: PageHeaderProps) {
+  if (!subtitle && !extra) return null;
   return (
-    <div className="kkp-flex-between kkp-mb-28" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: 16 }}>
+    <div className="kkp-flex-between kkp-mb-24" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
       <div>
-        <Title
-          level={3}
-          className="kkp-text-navy kkp-font-manrope"
-          style={{
-            margin: 0,
-            fontWeight: 800,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          {title}
-        </Title>
         {subtitle && (
-          <Text className="kkp-text-muted" style={{ fontSize: 14, marginTop: 4, display: 'block' }}>
+          <Text className="kkp-text-muted" style={{ fontSize: 14, display: 'block' }}>
             {subtitle}
           </Text>
         )}

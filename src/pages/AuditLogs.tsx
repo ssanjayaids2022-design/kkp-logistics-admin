@@ -35,8 +35,20 @@ export default function AuditLogs() {
   const { t } = useLanguage();
   const [searchText, setSearchText] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [adminFilter, setAdminFilter] = useState<string | null>(null);
 
   const isSuper = user?.role === 'CHAIRMAN' || user?.role === 'MANAGER';
+
+  // Distinct admins for the actor filter: from the logs + registered admin accounts.
+  const adminNames = React.useMemo(() => {
+    const fromLogs = mockAuditLogs.map(l => l.user);
+    let fromUsers: string[] = [];
+    try {
+      fromUsers = (JSON.parse(localStorage.getItem('kkp_users') || '[]') as any[])
+        .map(u => u?.data?.name).filter(Boolean);
+    } catch { /* ignore */ }
+    return Array.from(new Set([...fromLogs, ...fromUsers]));
+  }, []);
 
   // Filter logs. If the logged in user is regular ADMIN, only display logs matching their name.
   // Super Admin can view all.
@@ -49,8 +61,9 @@ export default function AuditLogs() {
       log.user.toLowerCase().includes(searchText.toLowerCase());
 
     const matchesCategory = !categoryFilter || log.actionType === categoryFilter;
+    const matchesAdmin = !adminFilter || log.user === adminFilter;
 
-    return matchesUserScope && matchesSearch && matchesCategory;
+    return matchesUserScope && matchesSearch && matchesCategory && matchesAdmin;
   });
 
   const columns = [
@@ -124,7 +137,7 @@ export default function AuditLogs() {
 
       {/* Filter Toolbar */}
       <Row gutter={[12, 12]} className="kkp-mb-20">
-        <Col xs={24} sm={12} md={10}>
+        <Col xs={24} sm={12} md={7}>
           <Input
             placeholder="Search logs by keyword..."
             prefix={<SearchOutlined style={{ color: '#98A2B3' }} />}
@@ -134,7 +147,18 @@ export default function AuditLogs() {
             allowClear
           />
         </Col>
-        <Col xs={12} sm={6} md={6}>
+        <Col xs={12} sm={6} md={5}>
+          <Select
+            placeholder="Admin"
+            value={adminFilter}
+            onChange={setAdminFilter}
+            style={{ width: '100%' }}
+            allowClear
+            showSearch
+            options={adminNames.map(n => ({ value: n, label: n }))}
+          />
+        </Col>
+        <Col xs={12} sm={6} md={5}>
           <Select
             placeholder="Category Filter"
             value={categoryFilter}
@@ -150,7 +174,7 @@ export default function AuditLogs() {
             ]}
           />
         </Col>
-        <Col xs={12} sm={6} md={8}>
+        <Col xs={24} sm={12} md={7}>
           <RangePicker style={{ width: '100%', borderRadius: 8 }} />
         </Col>
       </Row>

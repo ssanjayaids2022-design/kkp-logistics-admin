@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { Table, Input, Select, DatePicker, Button, Space, Tag, Dropdown, Row, Col, Modal, message, Checkbox, Typography } from 'antd';
+import { Table, Input, Select, DatePicker, Button, Space, Dropdown, Row, Col, Modal, message, Checkbox, Typography, Alert } from 'antd';
 import {
   SearchOutlined,
-  EyeOutlined,
+  ThunderboltOutlined,
   EditOutlined,
   DeleteOutlined,
   MoreOutlined,
   PlusOutlined,
   UserOutlined,
+  ShoppingOutlined,
+  CarOutlined,
+  CheckCircleOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
+import KPICard from '../components/KPICard';
+import { exportToCsv } from '../utils/exportCsv';
 import StatusTag from '../components/StatusTag';
 import GoldButton from '../components/GoldButton';
 import { useLoads } from '../context/LoadsContext';
@@ -33,7 +39,7 @@ export default function LoadListScreen() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { loads, deleteLoad } = useLoads();
+  const { loads, cancelLoad, loading, error, refresh } = useLoads();
   const { t } = useLanguage();
   const { user } = useAuth();
 
@@ -48,10 +54,14 @@ export default function LoadListScreen() {
   const canDelete = user?.role === 'MANAGER' || user?.role === 'LOAD_ADMIN';
 
   const filteredLoads = loads.filter(load => {
+    const q = searchText.toLowerCase();
     const matchSearch = !searchText ||
-      load.id.toLowerCase().includes(searchText.toLowerCase()) ||
-      load.source.toLowerCase().includes(searchText.toLowerCase()) ||
-      load.destination.toLowerCase().includes(searchText.toLowerCase());
+      load.id.toLowerCase().includes(q) ||
+      load.source.toLowerCase().includes(q) ||
+      load.destination.toLowerCase().includes(q) ||
+      `${load.source} → ${load.destination}`.toLowerCase().includes(q) ||
+      (load.assignedDriver || '').toLowerCase().includes(q) ||
+      load.vehicleType.toLowerCase().includes(q);
     const matchStatus = !statusFilter || load.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -112,26 +122,6 @@ export default function LoadListScreen() {
       render: (status) => <StatusTag status={status as any} />,
     },
     {
-      title: t('loads.bids'),
-      dataIndex: 'bidsCount',
-      key: 'bidsCount',
-      width: 70,
-      align: 'center',
-      render: (count) => (
-        <Tag style={{
-          borderRadius: 20,
-          fontWeight: 700,
-          background: count > 0 ? 'rgba(11,76,172,0.08)' : '#F9FAFB',
-          color: count > 0 ? '#0B4C8C' : '#98A2B3',
-          border: 'none',
-          minWidth: 32,
-          textAlign: 'center',
-        }}>
-          {count}
-        </Tag>
-      ),
-    },
-    {
       title: t('loads.budget'),
       key: 'budget',
       width: 140,
@@ -169,7 +159,7 @@ export default function LoadListScreen() {
       width: 50,
       render: (_, record) => {
         const menuItems = [
-          { key: 'view', icon: <EyeOutlined />, label: t('loads.viewBids'), onClick: () => navigate('/bids') },
+          { key: 'view', icon: <ThunderboltOutlined />, label: 'Find Drivers', onClick: () => navigate(`/match/${record.id}`) },
         ];
         if (!isChairman) {
           menuItems.push(
@@ -211,11 +201,30 @@ export default function LoadListScreen() {
     setDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleExportLoads = () => {
+    exportToCsv('loads', [
+      { header: 'Load ID', value: l => l.id },
+      { header: 'Source', value: l => l.source },
+      { header: 'Destination', value: l => l.destination },
+      { header: 'Vehicle', value: l => l.vehicleType },
+      { header: 'Weight', value: l => l.weight },
+      { header: 'Status', value: l => l.status },
+      { header: 'Driver', value: l => l.assignedDriver || '' },
+      { header: 'Budget', value: l => l.budget },
+      { header: 'Posted', value: l => l.postedDate },
+    ], filteredLoads);
+    message.success(`Exported ${filteredLoads.length} load(s) to CSV.`);
+  };
+
+  const handleConfirmDelete = async () => {
     if (loadToDelete && deleteConfirmText === 'DELETE CONFIRM' && deleteRiskCheckbox) {
-      deleteLoad(loadToDelete.id);
-      message.success(`Load ${loadToDelete.id} permanently deleted.`);
-      setDeleteModalOpen(false);
+      try {
+        await cancelLoad(loadToDelete.id);
+        message.success(`Load ${loadToDelete.id} cancelled.`);
+        setDeleteModalOpen(false);
+      } catch (e) {
+        message.error(`Failed to cancel load: ${e instanceof Error ? e.message : 'unknown error'}`);
+      }
     }
   };
 
@@ -223,15 +232,69 @@ export default function LoadListScreen() {
     <div>
       <PageHeader
         title={t('loads.title')}
-        subtitle={`${loads.length} ${t('loads.totalLoads')} — ${loads.filter(l => l.status === 'active').length} ${t('loads.active')}`}
+        subtitle={t('loads.summary', { total: loads.length, active: loads.filter(l => l.status === 'active').length })}
         extra={
-          !isChairman && (
-            <GoldButton icon={<PlusOutlined />} onClick={() => navigate('/loads/new')}>
-              {t('loads.postNew')}
-            </GoldButton>
-          )
+          <Space>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExportLoads}
+              className="kkp-btn-rounded kkp-weight-600 kkp-text-dark"
+              style={{ borderColor: '#D0D5DD', background: '#FFFFFF' }}
+            >
+              Export
+            </Button>
+            {!isChairman && (
+              <GoldButton icon={<PlusOutlined />} onClick={() => navigate('/loads/new')}>
+                {t('loads.postNew')}
+              </GoldButton>
+            )}
+          </Space>
         }
       />
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        <Col xs={12} md={8}>
+          <KPICard
+            title="Available Loads"
+            value={loads.filter(l => l.status === 'active' || l.status === 'pending').length}
+            trend="Open for matching"
+            trendUp
+            icon={<ShoppingOutlined />}
+            color="#FFC20E"
+          />
+        </Col>
+        <Col xs={12} md={8}>
+          <KPICard
+            title="In Transit"
+            value={loads.filter(l => l.status === 'in_transit').length}
+            trend="On the road"
+            trendUp
+            icon={<CarOutlined />}
+            color="#0B4C8C"
+          />
+        </Col>
+        <Col xs={12} md={8}>
+          <KPICard
+            title="Delivered"
+            value={loads.filter(l => l.status === 'delivered' || l.status === 'completed').length}
+            trend="Completed"
+            trendUp
+            icon={<CheckCircleOutlined />}
+            color="#12B76A"
+          />
+        </Col>
+      </Row>
+
+      {error && (
+        <Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 16, borderRadius: 10 }}
+          message="Couldn't reach the loads service"
+          description={error}
+          action={<Button size="small" onClick={refresh}>Retry</Button>}
+        />
+      )}
 
       {/* Filters */}
       <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
@@ -278,6 +341,8 @@ export default function LoadListScreen() {
         columns={columns}
         dataSource={filteredLoads}
         rowKey="id"
+        loading={loading && loads.length === 0}
+        locale={{ emptyText: loading ? 'Loading loads…' : 'No loads yet — post one to get started.' }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card as AntdCard, Table, Button, Tag, Space, Avatar, Input, Modal, Form, Select, message, Tooltip, Typography } from 'antd';
 const Card = AntdCard as any;
-import { UserAddOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, DeleteOutlined, SearchOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { UserAddOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, DeleteOutlined, SearchOutlined, SafetyCertificateOutlined, KeyOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import PageHeader from '../components/PageHeader';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, type PasswordResetRequest } from '../context/AuthContext';
 
 const { Text } = Typography;
 
@@ -16,57 +16,85 @@ interface AdminAccount {
   status: 'Active' | 'Suspended';
   username?: string;
   password?: string;
+  lastLogin?: string;
 }
 
+const mapUsers = (usersList: any[]): AdminAccount[] => usersList.map((u: any) => ({
+  key: u.data.id,
+  name: u.data.name,
+  email: u.data.email,
+  role: u.data.role,
+  scope: u.data.scope || 'South Region (Chennai/Cbe)',
+  status: u.data.status || 'Active',
+  username: u.username || u.data.email.split('@')[0],
+  password: u.password || 'admin123',
+  lastLogin: u.data.lastLogin,
+}));
+
+const fmtLogin = (iso?: string) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+};
+
 export default function AdminManagement() {
-  const { user } = useAuth();
+  const { user, changePassword } = useAuth();
   const isChairman = user?.role === 'CHAIRMAN';
 
-  const [admins, setAdmins] = useState<AdminAccount[]>(() => {
-    const stored = localStorage.getItem('kkp_users');
-    if (stored) {
-      const usersList = JSON.parse(stored);
-      return usersList.map((u: any) => ({
-        key: u.data.id,
-        name: u.data.name,
-        email: u.data.email,
-        role: u.data.role,
-        scope: u.data.scope || (u.data.role === 'SUPER_ADMIN' ? 'National (Full Access)' : 'South Region (Chennai/Cbe)'),
-        status: u.data.status || 'Active',
-        username: u.username || u.data.email.split('@')[0],
-        password: u.password || 'admin123',
-      }));
-    }
-    return [];
-  });
+  const readAdmins = () => mapUsers(JSON.parse(localStorage.getItem('kkp_users') || '[]'));
+  const readRequests = (): PasswordResetRequest[] =>
+    JSON.parse(localStorage.getItem('kkp_pwd_requests') || '[]');
+
+  const [admins, setAdmins] = useState<AdminAccount[]>(readAdmins);
+  const [requests, setRequests] = useState<PasswordResetRequest[]>(readRequests);
 
   const [searchText, setSearchText] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingKey, setEditingKey] = useState<string | null>(null);
 
+  // Change-password modal
+  const [pwTarget, setPwTarget] = useState<AdminAccount | null>(null);
+  const [pwForm] = Form.useForm();
+
+  const reloadAdmins = () => setAdmins(readAdmins());
+
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'kkp_users') {
-        const stored = localStorage.getItem('kkp_users');
-        if (stored) {
-          const usersList = JSON.parse(stored);
-          setAdmins(usersList.map((u: any) => ({
-            key: u.data.id,
-            name: u.data.name,
-            email: u.data.email,
-            role: u.data.role,
-            scope: u.data.scope || (u.data.role === 'SUPER_ADMIN' ? 'National (Full Access)' : 'South Region (Chennai/Cbe)'),
-            status: u.data.status || 'Active',
-            username: u.username || u.data.email.split('@')[0],
-            password: u.password || 'admin123',
-          })));
-        }
-      }
+      if (e.key === 'kkp_users') setAdmins(readAdmins());
+      if (e.key === 'kkp_pwd_requests') setRequests(readRequests());
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
+  const openChangePassword = (record: AdminAccount) => {
+    if (record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN') {
+      message.error("You cannot change the Chairman's password.");
+      return;
+    }
+    pwForm.resetFields();
+    setPwTarget(record);
+  };
+
+  const handleChangePassword = () => {
+    pwForm.validateFields().then(({ newPassword }) => {
+      if (!pwTarget) return;
+      if (pwTarget.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN') {
+        message.error("You cannot change the Chairman's password.");
+        return;
+      }
+      changePassword(pwTarget.key, newPassword);
+      // Mark any matching pending reset request resolved.
+      const reqs = readRequests().map(r =>
+        r.userId === pwTarget.key && r.status === 'pending' ? { ...r, status: 'resolved' as const } : r);
+      localStorage.setItem('kkp_pwd_requests', JSON.stringify(reqs));
+      setRequests(reqs);
+      reloadAdmins();
+      message.success(`Password updated for ${pwTarget.name}.`);
+      setPwTarget(null);
+    });
+  };
 
   const handleFormValuesChange = (changedValues: any, allValues: any) => {
     if (changedValues.email && !editingKey) {
@@ -115,10 +143,12 @@ export default function AdminManagement() {
         const currentUsers = JSON.parse(localStorage.getItem('kkp_users') || '[]');
         const updatedUsers = currentUsers.map((u: any) => {
           if (u.data.id === editingKey) {
+            // A manager may not change the Chairman's password.
+            const lockPw = u.data.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN';
             return {
               ...u,
               username: values.username || u.username,
-              password: values.password || u.password,
+              password: lockPw ? u.password : (values.password || u.password),
               data: {
                 ...u.data,
                 name: values.name,
@@ -176,7 +206,7 @@ export default function AdminManagement() {
     }
     const updatedList = admins.map(item => {
       if (item.key === key) {
-        const newStatus = item.status === 'Active' ? 'Suspended' : 'Active';
+        const newStatus: 'Active' | 'Suspended' = item.status === 'Active' ? 'Suspended' : 'Active';
         message.info(`Admin account status set to ${newStatus}.`);
         return { ...item, status: newStatus };
       }
@@ -277,6 +307,15 @@ export default function AdminManagement() {
       ),
     },
     {
+      title: 'Last Login',
+      key: 'lastLogin',
+      render: (_, record: AdminAccount) => (
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          <ClockCircleOutlined style={{ marginRight: 4, color: '#0B4C8C' }} />{fmtLogin(record.lastLogin)}
+        </Text>
+      ),
+    },
+    {
       title: 'Actions',
       key: 'actions',
       render: (_, record: AdminAccount) => (
@@ -286,6 +325,14 @@ export default function AdminManagement() {
               type="text"
               icon={<EditOutlined style={{ color: '#0B4C8C' }} />}
               onClick={() => handleOpenModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title={record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN' ? "Chairman's password is protected" : 'Change Password'}>
+            <Button
+              type="text"
+              icon={<KeyOutlined style={{ color: record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN' ? '#D0D5DD' : '#7C3AED' }} />}
+              disabled={record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN'}
+              onClick={() => openChangePassword(record)}
             />
           </Tooltip>
           <Tooltip title={record.status === 'Active' ? 'Suspend Account' : 'Activate Account'}>
@@ -326,6 +373,30 @@ export default function AdminManagement() {
           )
         }
       />
+
+      {!isChairman && requests.filter(r => r.status === 'pending').length > 0 && (
+        <Card
+          className="kkp-card"
+          style={{ marginBottom: 16, borderLeft: '4px solid #F4811F' }}
+          title={<Space><KeyOutlined style={{ color: '#F4811F' }} /><span className="kkp-text-navy kkp-weight-700">Password Reset Requests ({requests.filter(r => r.status === 'pending').length})</span></Space>}
+        >
+          {requests.filter(r => r.status === 'pending').map(r => (
+            <div key={r.id} className="kkp-flex-between kkp-items-center" style={{ padding: '8px 0', borderBottom: '1px solid #F2F4F7' }}>
+              <div>
+                <Text strong style={{ color: '#101828' }}>{r.name}</Text> <Text type="secondary">({r.username})</Text>
+                <div><Text type="secondary" style={{ fontSize: 12 }}>{r.reason || 'Requested a password change'} · {fmtLogin(r.at)}</Text></div>
+              </div>
+              <Button
+                size="small"
+                icon={<KeyOutlined />}
+                onClick={() => { const a = admins.find(x => x.key === r.userId); if (a) openChangePassword(a); }}
+              >
+                Set new password
+              </Button>
+            </div>
+          ))}
+        </Card>
+      )}
 
       <Card
         className="kkp-card"
@@ -427,6 +498,26 @@ export default function AdminManagement() {
                 { value: 'North Region (Delhi)', label: 'North Region (Delhi)' },
               ]}
             />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={<span className="kkp-text-dark"><KeyOutlined style={{ color: '#7C3AED', marginRight: 8 }} />Change Password — {pwTarget?.name}</span>}
+        open={!!pwTarget}
+        onOk={handleChangePassword}
+        onCancel={() => setPwTarget(null)}
+        okText="Update Password"
+        okButtonProps={{ style: { background: '#0B4C8C', border: 'none' } }}
+        destroyOnClose
+      >
+        <Form form={pwForm} layout="vertical" style={{ marginTop: 12 }}>
+          <Form.Item
+            name="newPassword"
+            label="New Password"
+            rules={[{ required: true, message: 'Enter a new password' }, { min: 4, message: 'At least 4 characters' }]}
+          >
+            <Input.Password placeholder="New password" />
           </Form.Item>
         </Form>
       </Modal>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Row, Col, Card as AntdCard, Timeline, Button, Typography, Space, Progress, Tag, DatePicker, Select, Tooltip, Badge, Statistic, Modal } from 'antd';
+import { Row, Col, Card as AntdCard, Timeline, Button, Typography, Space, Tag, DatePicker, Select, Tooltip, Badge, Statistic, Modal, Table, InputNumber, Switch, message } from 'antd';
 const Card = AntdCard as any;
 import {
   ShoppingOutlined,
@@ -20,6 +20,7 @@ import {
   BarChartOutlined,
   RiseOutlined,
   FallOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip,
@@ -28,13 +29,15 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import GoldButton from '../components/GoldButton';
+import StatusTag from '../components/StatusTag';
 import { useAuth } from '../context/AuthContext';
+import { useLoads } from '../context/LoadsContext';
+import type { Load } from '../types';
 import {
   revenueData,
   recentActivity,
   dailyTripCompletionsTrend,
   topRoutesByVolume,
-  loadBiddingMetrics,
 } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -128,6 +131,112 @@ export default function DashboardScreen() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { loads, updatePricing } = useLoads();
+
+  type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
+  const [pricing, setPricing] = useState<Record<string, Draft>>({});
+
+  // Seed the editable draft for any load we haven't tracked yet (don't clobber in-progress edits).
+  useEffect(() => {
+    setPricing(prev => {
+      const next = { ...prev };
+      let changed = false;
+      for (const l of loads) {
+        if (!next[l.id]) {
+          next[l.id] = {
+            quotedAmount: l.quotedAmount ?? l.budget ?? 0,
+            kkpPrice: l.kkpPrice ?? l.budget ?? 0,
+            bidAmount: l.bidAmount ?? null,
+            offeredAmount: l.offeredAmount ?? 0,
+            amountVisible: l.amountVisible !== false,
+          };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [loads]);
+
+  const money = (n?: number | null) => (n || n === 0 ? `₹${Number(n).toLocaleString('en-IN')}` : '—');
+  const isAssigned = (l: Load) => !!l.assignedDriver;
+  const getP = (id: string): Draft => pricing[id] || { quotedAmount: 0, kkpPrice: 0, bidAmount: null, offeredAmount: 0, amountVisible: true };
+  const setField = (id: string, field: keyof Draft, value: any) =>
+    setPricing(prev => ({ ...prev, [id]: { ...getP(id), [field]: value } }));
+  const saveField = (id: string, patch: Partial<Draft>) =>
+    updatePricing(id, patch).catch(() => message.error('Failed to save pricing'));
+
+  const editNum = (id: string, field: 'quotedAmount' | 'kkpPrice' | 'bidAmount' | 'offeredAmount') => (
+    <InputNumber
+      size="small"
+      value={getP(id)[field] as number | null}
+      min={0}
+      controls={false}
+      disabled={isChairman}
+      style={{ width: 96 }}
+      prefix="₹"
+      formatter={(v: any) => (v == null || v === '' ? '' : `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','))}
+      parser={(v: any) => (v ? Number(String(v).replace(/[^\d]/g, '')) : 0) as any}
+      onChange={(v) => setField(id, field, v == null ? (field === 'bidAmount' ? null : 0) : Number(v))}
+      onBlur={() => saveField(id, { [field]: getP(id)[field] })}
+    />
+  );
+
+  const loadLedgerColumns = [
+    { title: 'Load No', dataIndex: 'id', key: 'id', width: 96, fixed: 'left' as const,
+      render: (id: string) => <span className="kkp-text-gold kkp-weight-700">{id}</span> },
+    { title: 'Route', key: 'route', width: 180,
+      render: (_: any, l: Load) => <span className="kkp-text-dark">{l.source} → {l.destination}</span> },
+    { title: 'Assignment', key: 'assigned', width: 110,
+      render: (_: any, l: Load) => (
+        <Tag color={isAssigned(l) ? 'success' : 'default'} style={{ borderRadius: 6, fontWeight: 600 }}>
+          {isAssigned(l) ? 'Assigned' : 'Unassigned'}
+        </Tag>
+      ) },
+    { title: 'Driver', key: 'driver', width: 130,
+      render: (_: any, l: Load) => l.assignedDriver
+        ? <span className="kkp-text-dark">{l.assignedDriver}</span>
+        : <span className="kkp-text-drab">—</span> },
+    { title: 'Quoted', key: 'quoted', width: 120, render: (_: any, l: Load) => {
+        // Quoted shows the running total = base quote + driver's offered extra.
+        // Editing it sets the base (total − offered); editing Offered bumps this up.
+        const p = getP(l.id);
+        const total = (p.quotedAmount || 0) + (p.offeredAmount || 0);
+        return (
+          <InputNumber
+            size="small"
+            value={total}
+            min={0}
+            controls={false}
+            disabled={isChairman}
+            style={{ width: 96 }}
+            prefix="₹"
+            formatter={(v: any) => (v == null || v === '' ? '' : `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','))}
+            parser={(v: any) => (v ? Number(String(v).replace(/[^\d]/g, '')) : 0) as any}
+            onChange={(v) => setField(l.id, 'quotedAmount', Math.max(0, (Number(v) || 0) - (p.offeredAmount || 0)))}
+            onBlur={() => saveField(l.id, { quotedAmount: getP(l.id).quotedAmount })}
+          />
+        );
+      } },
+    { title: 'KKP Price', key: 'kkp', width: 120, render: (_: any, l: Load) => editNum(l.id, 'kkpPrice') },
+    { title: 'Offered', key: 'offered', width: 120, render: (_: any, l: Load) => editNum(l.id, 'offeredAmount') },
+    { title: 'Final', key: 'final', width: 110, align: 'right' as const,
+      render: (_: any, l: Load) => {
+        const p = getP(l.id);
+        // Final = Quoted + Offered (load-giver's amount plus the driver's extra charge).
+        return <span className="kkp-weight-800" style={{ color: '#12B76A' }}>{money((p.quotedAmount || 0) + (p.offeredAmount || 0))}</span>;
+      } },
+    { title: 'Trip Status', dataIndex: 'status', key: 'status', width: 120,
+      render: (s: string) => <StatusTag status={s as any} /> },
+    { title: 'Show to driver', key: 'visible', width: 120, align: 'center' as const,
+      render: (_: any, l: Load) => (
+        <Switch
+          size="small"
+          checked={getP(l.id).amountVisible}
+          disabled={isChairman}
+          onChange={(c) => { setField(l.id, 'amountVisible', c); saveField(l.id, { amountVisible: c }); }}
+        />
+      ) },
+  ];
   const isChairman = user?.role === 'CHAIRMAN';
   const isManager = user?.role === 'MANAGER';
   const isLoadAdmin = user?.role === 'LOAD_ADMIN';
@@ -183,30 +292,16 @@ export default function DashboardScreen() {
   };
 
   const kpiCards = useMemo(() => {
+    // Category-specific KPIs now live on their feature pages (Loads / Drivers /
+    // Payments). The dashboard keeps a small cross-cutting operations overview.
     const list = [
       { title: 'Active Trips', numericValue: metrics.trips, displayValue: String(metrics.trips), trend: '+4% from yesterday', trendUp: true, icon: <CarOutlined />, color: '#0B4C8C',
         drill: [{ label: 'On-Time', value: `${metrics.trips - 2}`, color: '#10B981' }, { label: 'Delayed', value: '2', color: '#F4811F' }, { label: 'Critical', value: '0', color: '#EF4444' }], visible: true },
-      { title: 'Available Loads', numericValue: metrics.loads, displayValue: String(metrics.loads), trend: '+10% from yesterday', trendUp: true, icon: <ShoppingOutlined />, color: '#FFC20E',
-        drill: [{ label: 'Posted Today', value: '5', color: '#0B4C8C' }, { label: 'Bidding Open', value: `${metrics.loads - 2}`, color: '#FFC20E' }, { label: 'Assigned', value: '8', color: '#10B981' }], visible: true },
-      { title: 'Pending Driver Verif.', numericValue: metrics.verif, displayValue: String(metrics.verif), trend: '-2 from yesterday', trendUp: false, icon: <TeamOutlined />, color: '#F4811F',
-        drill: [{ label: 'Document Pending', value: String(metrics.verif), color: '#F4811F' }, { label: 'Approved Today', value: '3', color: '#10B981' }], visible: !isLoadAdmin },
       { title: 'Pending POD Reviews', numericValue: metrics.pod, displayValue: String(metrics.pod), trend: '+3 from yesterday', trendUp: false, icon: <AuditOutlined />, color: '#0B4C8C',
         drill: [{ label: 'Under Review', value: String(metrics.pod), color: '#0B4C8C' }, { label: 'Cleared Today', value: '7', color: '#10B981' }], visible: !isLoadAdmin },
-      { title: 'Pending Payments', numericValue: metrics.pay, displayValue: String(metrics.pay), trend: '-1 from yesterday', trendUp: false, icon: <DollarOutlined />, color: '#EF4444',
-        drill: [{ label: 'Overdue > 7d', value: '2', color: '#EF4444' }, { label: 'Due Today', value: `${metrics.pay - 2}`, color: '#F4811F' }], visible: showFinancials },
-      { title: 'Active Drivers', numericValue: metrics.drivers, displayValue: String(metrics.drivers), trend: '+8 this week', trendUp: true, icon: <TeamOutlined />, color: '#10B981',
-        drill: [{ label: 'On Trip', value: String(metrics.trips), color: '#0B4C8C' }, { label: 'Available', value: String(metrics.drivers - metrics.trips), color: '#10B981' }, { label: 'Offline', value: '12', color: '#98A2B3' }], visible: true },
-      { title: "Today's Revenue", numericValue: 180000, displayValue: metrics.todayRev, trend: '+20% vs avg', trendUp: true, icon: <DollarOutlined />, color: '#0B4C8C',
-        drill: [{ label: 'Freight Collected', value: '₹1.5L', color: '#0B4C8C' }, { label: 'Commission', value: '₹0.3L', color: '#FFC20E' }], visible: showFinancials },
-      { title: 'Pending Payouts', numericValue: 240000, displayValue: metrics.payouts, trend: '₹1.2L due today', trendUp: false, icon: <ClockCircleOutlined />, color: '#F4811F',
-        drill: [{ label: 'Drivers Awaiting', value: '14', color: '#F4811F' }, { label: 'Amount Queued', value: metrics.payouts, color: '#EF4444' }], visible: showFinancials },
-      { title: 'Month Revenue', numericValue: 2840000, displayValue: metrics.monthRev, trend: '+12% vs last month', trendUp: true, icon: <FundOutlined />, color: '#10B981',
-        drill: [{ label: 'Gross Revenue', value: metrics.monthRev, color: '#10B981' }, { label: 'Net Margin', value: '18.4%', color: '#0B4C8C' }], visible: showFinancials },
-      { title: 'Avg Trip Value', numericValue: 32500, displayValue: metrics.avgTrip, trend: '+1.5% this month', trendUp: true, icon: <LineChartOutlined />, color: '#FFC20E',
-        drill: [{ label: 'Short Haul Avg', value: '₹18,200', color: '#0B4C8C' }, { label: 'Long Haul Avg', value: '₹48,700', color: '#FFC20E' }], visible: showFinancials },
     ];
     return list.filter(c => c.visible);
-  }, [metrics, isLoadAdmin, showFinancials]);
+  }, [metrics, isLoadAdmin]);
 
   const timelineItems = useMemo(() =>
     recentActivity.slice(0, 6).map((item) => ({
@@ -231,7 +326,7 @@ export default function DashboardScreen() {
   const quickActions = useMemo(() => {
     const list = [
       { label: t('dashboard.postLoad'), icon: <PlusOutlined />, path: '/loads/new', color: '#F4811F', visible: !isChairman },
-      { label: t('dashboard.pendingBids'), icon: <ClockCircleOutlined />, path: '/bids', color: '#0B4C8C', visible: true },
+      { label: 'Match Loads', icon: <ThunderboltOutlined />, path: '/match', color: '#0B4C8C', visible: true },
       { label: t('dashboard.approveDrivers'), icon: <TeamOutlined />, path: '/drivers', color: '#10B981', visible: !isChairman && !isLoadAdmin },
       { label: t('dashboard.revenue'), icon: <DollarOutlined />, path: '/payments', color: '#FFC20E', visible: showFinancials && !isChairman },
     ];
@@ -331,6 +426,30 @@ export default function DashboardScreen() {
           </Space>
         </div>
       )}
+
+      {/* Loads Ledger Table */}
+      <Card
+        className="kkp-card kkp-mb-28"
+        title={
+          <div className="kkp-flex-between" style={{ width: '100%' }}>
+            <span className="kkp-text-navy kkp-font-manrope kkp-weight-700">Loads Ledger</span>
+            <Button type="link" className="kkp-text-gold kkp-weight-600" icon={<RightOutlined />} iconPosition="end" onClick={() => navigate('/loads')}>
+              View all
+            </Button>
+          </div>
+        }
+        styles={{ body: { padding: '8px 8px 0' } }}
+      >
+        <Table
+          columns={loadLedgerColumns}
+          dataSource={loads}
+          rowKey="id"
+          size="middle"
+          pagination={{ pageSize: 6, showSizeChanger: false }}
+          scroll={{ x: 1000 }}
+          locale={{ emptyText: 'No loads yet.' }}
+        />
+      </Card>
 
       {/* Charts */}
       <Row gutter={[20, 20]} className="kkp-mb-28">
@@ -488,49 +607,8 @@ export default function DashboardScreen() {
           </Card>
         </Col>
 
-        {/* Bidding Gauge */}
-        <Col xs={24} lg={12}>
-          <Card
-            title={<span className="kkp-text-navy kkp-font-manrope kkp-weight-700">Bid Competitiveness Gauge</span>}
-            className="kkp-card"
-            styles={{ body: { padding: '24px 16px' } }}
-          >
-            <Row align="middle" justify="center" style={{ minHeight: 220 }}>
-              <Col xs={24} sm={10} style={{ textAlign: 'center', marginBottom: 16 }}>
-                <Progress
-                  type="dashboard"
-                  percent={80}
-                  strokeColor={{ '0%': '#FFC20E', '50%': '#F4811F', '100%': '#0B4C8C' }}
-                  format={() => `${loadBiddingMetrics.avgBidsPerLoad}`}
-                  strokeWidth={8}
-                  size={150}
-                />
-                <div style={{ marginTop: 8 }}>
-                  <Text strong style={{ fontSize: 15, color: '#101828' }}>Avg Bids / Load</Text>
-                </div>
-              </Col>
-              <Col xs={24} sm={14} style={{ paddingLeft: 12 }}>
-                <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                  {[
-                    { label: 'Bid Acceptance Rate', value: `${loadBiddingMetrics.bidAcceptanceRate}%`, color: '#0B4C8C' },
-                    { label: 'Avg Savings vs Budget', value: `${Math.abs(loadBiddingMetrics.avgBidVsBaseDiff)}% Lower`, color: '#F4811F' },
-                    { label: 'Avg Time to Assign', value: loadBiddingMetrics.bidToAssignmentTime, color: '#FFC20E' },
-                  ].map((item, i) => (
-                    <div key={i} style={{ background: '#F8F9FC', padding: '10px 14px', borderRadius: 8, borderLeft: `4px solid ${item.color}`, cursor: 'pointer', transition: 'background 0.2s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = `${item.color}12`)}
-                      onMouseLeave={e => (e.currentTarget.style.background = '#F8F9FC')}>
-                      <Text style={{ fontSize: 11, color: '#667085', display: 'block', textTransform: 'uppercase' }}>{item.label}</Text>
-                      <Text strong style={{ fontSize: 18, color: '#101828' }}>{item.value}</Text>
-                    </div>
-                  ))}
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-
         {/* Activity Feed */}
-        <Col xs={24} lg={isSystemAdmin ? 12 : 24}>
+        <Col xs={24} lg={24}>
           <Card
             title={
               <div className="kkp-flex-between">

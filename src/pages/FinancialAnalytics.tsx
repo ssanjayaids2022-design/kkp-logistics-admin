@@ -231,7 +231,7 @@ export default function FinancialAnalytics() {
                     innerRadius={55}
                     outerRadius={85}
                     dataKey="value"
-                    label={({ name, value }: { name: string; value: number }) => `${name}: ${value}%`}
+                    label={({ name, value }: any) => `${name}: ${value}%`}
                     labelLine={false}
                   >
                     {invoiceData.map((_, i) => (

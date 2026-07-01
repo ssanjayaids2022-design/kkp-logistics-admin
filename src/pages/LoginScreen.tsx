@@ -3,6 +3,7 @@ import { Form, Input, Button, Checkbox, Typography, message, Modal, Space } from
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const { Title, Text, Link } = Typography;
 
@@ -10,7 +11,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, requestPasswordReset } = useAuth();
+  const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const [forgotForm] = Form.useForm();
 
@@ -31,11 +33,21 @@ export default function LoginScreen() {
 
   const handleForgotPassword = async (values: { email: string }) => {
     setForgotLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 600));
+    const ok = requestPasswordReset(values.email, 'Forgot password (from login)');
     setForgotLoading(false);
-    message.success(`A password reset link has been dispatched to ${values.email}`);
-    setIsForgotModalOpen(false);
-    forgotForm.resetFields();
+    if (ok) {
+      addNotification({
+        title: 'Password reset requested',
+        message: `${values.email} requested a password reset. Resolve it in Admin Management.`,
+        type: 'system',
+      });
+      message.success('Your request has been sent to the Manager.');
+      setIsForgotModalOpen(false);
+      forgotForm.resetFields();
+    } else {
+      message.error('No account found for that email or username.');
+    }
   };
 
   return (
@@ -192,25 +204,22 @@ export default function LoginScreen() {
           forgotForm.resetFields();
         }}
         onOk={() => forgotForm.submit()}
-        okText="Send Reset Link"
+        okText="Send Request to Manager"
         okButtonProps={{ loading: forgotLoading, className: 'kkp-btn-gold', style: { background: '#F4811F', border: 'none' } }}
       >
         <div style={{ marginTop: 16 }}>
           <Text style={{ display: 'block', marginBottom: 16 }}>
-            Enter the corporate email address registered to your account. We will transmit a secure verification link to reset your credentials.
+            Enter your registered email or username. A password-reset request will be sent to your Manager, who can set a new password for you.
           </Text>
           <Form form={forgotForm} layout="vertical" onFinish={handleForgotPassword}>
             <Form.Item
               name="email"
-              label="Corporate Email"
-              rules={[
-                { required: true, message: 'Please enter your email address' },
-                { type: 'email', message: 'Please enter a valid email address' }
-              ]}
+              label="Email or Username"
+              rules={[{ required: true, message: 'Please enter your email or username' }]}
             >
               <Input
                 prefix={<MailOutlined className="kkp-text-drab" />}
-                placeholder="e.g. employee@kkptransports.com"
+                placeholder="e.g. loadadmin or employee@kkptransports.com"
               />
             </Form.Item>
           </Form>

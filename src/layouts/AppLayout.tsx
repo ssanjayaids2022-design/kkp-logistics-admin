@@ -19,18 +19,45 @@ import {
   BarChartOutlined,
   FundOutlined,
   CrownOutlined,
+  ThunderboltOutlined,
+  EnvironmentOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNotifications } from '../context/NotificationContext';
 import MobileBottomNav from '../components/MobileBottomNav';
+import ErrorBoundary from '../components/ErrorBoundary';
+import LiveClock from '../components/LiveClock';
 import { useLoads } from '../context/LoadsContext';
 import { drivers, payments } from '../data/mockData';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
+
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Dashboard',
+  '/loads': 'Load Management',
+  '/loads/new': 'Post New Load',
+  '/match': 'Match Load',
+  '/tracking': 'Live Tracking',
+  '/drivers': 'Driver Approvals',
+  '/payments': 'Payments Ledger',
+  '/profile': 'Profile',
+  '/settings': 'Settings',
+  '/analytics/predictive': 'Predictive Analytics',
+  '/analytics/financial': 'Financial Analytics',
+  '/analytics/loads': 'Load Analytics',
+  '/analytics/drivers': 'Driver Analytics',
+  '/analytics/trips': 'Trip Analytics',
+  '/analytics/payments-analytics': 'Payment Analytics',
+  '/analytics/operations': 'Operations',
+  '/analytics/routes': 'Route Analytics',
+  '/admin-users': 'Admin Directory',
+  '/access-matrix': 'Access Matrix',
+  '/audit-logs': 'Audit Logs',
+};
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -71,7 +98,8 @@ export default function AppLayout() {
       case '/': return <DashboardOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
       case '/loads': return <CarOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
       case '/loads/new': return <FormOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
-      case '/bids': return <AuditOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
+      case '/match': return <ThunderboltOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
+      case '/tracking': return <EnvironmentOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
       case '/drivers': return <TeamOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
       case '/payments': return <DollarOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
       case '/profile': return <UserOutlined style={{ color: '#0B4C8C', marginRight: 8 }} />;
@@ -97,7 +125,7 @@ export default function AppLayout() {
         );
       }
       quickNavOptions.push(
-        { value: JSON.stringify({ type: 'page', path: '/bids' }), label: <div className="kkp-items-center"><AuditOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Bids Comparison</span></div> },
+        { value: JSON.stringify({ type: 'page', path: '/match' }), label: <div className="kkp-items-center"><ThunderboltOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Match Load</span></div> },
         { value: JSON.stringify({ type: 'page', path: '/drivers' }), label: <div className="kkp-items-center"><TeamOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Driver Approvals</span></div> }
       );
       if (isChairman || isManager) {
@@ -124,7 +152,8 @@ export default function AppLayout() {
       pages.push({ name: 'Post New Load', path: '/loads/new' });
     }
     pages.push(
-      { name: 'Bids Comparison', path: '/bids' },
+      { name: 'Match Load', path: '/match' },
+      { name: 'Live Tracking', path: '/tracking' },
       { name: 'Driver Directory / Approvals', path: '/drivers' },
       { name: 'Driver Analytics', path: '/analytics/drivers' },
       { name: 'Load Analytics', path: '/analytics/loads' },
@@ -279,7 +308,8 @@ export default function AppLayout() {
     }
 
     items.push(
-      { key: '/bids', icon: <AuditOutlined />, label: t('nav.bids') },
+      { key: '/match', icon: <ThunderboltOutlined />, label: 'Match' },
+      { key: '/tracking', icon: <EnvironmentOutlined />, label: 'Live Tracking' },
       { key: '/drivers', icon: <TeamOutlined />, label: t('nav.drivers') }
     );
 
@@ -383,17 +413,25 @@ export default function AppLayout() {
       }}>
         <div className="kkp-flex-between kkp-items-center" style={{ width: '100%' }}>
           <div className="kkp-items-center kkp-gap-12">
-            <img
-              src="/logo.png"
-              alt="KKP Transports"
+            <div
+              className="kkp-flex-center"
               style={{
                 width: collapsed ? 36 : 44,
                 height: collapsed ? 36 : 44,
-                borderRadius: 10,
-                objectFit: 'contain',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.12)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: collapsed ? 15 : 18,
+                fontFamily: '"Manrope", sans-serif',
+                letterSpacing: '0.02em',
                 transition: 'all 0.3s',
+                flexShrink: 0,
               }}
-            />
+            >
+              K
+            </div>
             {!collapsed && (
               <div className="kkp-flex-col">
                 <Text strong className="kkp-font-manrope" style={{ fontSize: 16, lineHeight: 1.2, color: '#FFFFFF' }}>
@@ -538,30 +576,51 @@ export default function AppLayout() {
               />
             )}
             {isMobile && (
-              <img src="/logo.png" alt="KKP" className="kkp-btn-rounded" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+              <div
+                className="kkp-flex-center"
+                style={{ width: 32, height: 32, borderRadius: '50%', background: '#0B4C8C', color: '#FFFFFF', fontWeight: 800, fontSize: 14, fontFamily: '"Manrope", sans-serif' }}
+              >
+                K
+              </div>
             )}
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: '#101828',
+                fontFamily: '"Manrope", sans-serif',
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {PAGE_TITLES[location.pathname] || 'Dashboard'}
+            </span>
           </div>
 
           {!isMobile && (
             <AutoComplete
               popupClassName="kkp-search-dropdown"
-              style={{ width: '100%', maxWidth: 380 }}
+              style={{ width: 320 }}
               options={searchOptions}
               onSelect={handleSearchSelect}
               value={searchValue}
               onSearch={(value) => setSearchValue(value)}
             >
               <Input
-                placeholder={t('header.search')}
-                prefix={<SearchOutlined className="kkp-search-icon" style={{ fontSize: 15 }} />}
-                className="kkp-search-input"
-                bordered={false}
+                size="large"
+                variant="filled"
                 allowClear
+                placeholder={t('header.search')}
+                prefix={<SearchOutlined style={{ color: '#9aa0b3', fontSize: 16 }} />}
+                style={{ borderRadius: 22 }}
               />
             </AutoComplete>
           )}
 
           <div className="kkp-items-center kkp-gap-8">
+            {/* Live date + time (full on desktop, time-only on mobile) */}
+            {isMobile ? <LiveClock compact /> : <LiveClock />}
+
             {/* Role badge in header */}
             {!isMobile && (
               <Tag
@@ -602,7 +661,9 @@ export default function AppLayout() {
           minHeight: 'calc(100vh - 64px)',
         }}>
           <div className="kkp-max-width">
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </Content>
       </Layout>

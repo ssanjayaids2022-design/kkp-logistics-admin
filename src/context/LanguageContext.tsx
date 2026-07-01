@@ -4,7 +4,7 @@ export type Language = 'en' | 'ta';
 
 // ─── Translation Dictionary ─────────────────────────────────────────────────
 
-const translations: Record<string, Record<Language, string>> = {
+const translations = {
   // Sidebar & Navigation
   'nav.dashboard': { en: 'Dashboard', ta: 'டாஷ்போர்டு' },
   'nav.loads': { en: 'Loads', ta: 'சுமைகள்' },
@@ -82,6 +82,7 @@ const translations: Record<string, Record<Language, string>> = {
   'loads.postNew': { en: 'Post New Load', ta: 'புதிய சுமை பதிவு' },
   'loads.totalLoads': { en: 'total loads', ta: 'மொத்த சுமைகள்' },
   'loads.active': { en: 'active', ta: 'செயலில்' },
+  'loads.summary': { en: '{total} total loads — {active} active', ta: 'மொத்த சுமைகள்: {total} — செயலில்: {active}' },
   'loads.loadId': { en: 'Load ID', ta: 'சுமை எண்' },
   'loads.route': { en: 'Route', ta: 'வழி' },
   'loads.vehicle': { en: 'Vehicle', ta: 'வாகனம்' },
@@ -113,6 +114,7 @@ const translations: Record<string, Record<Language, string>> = {
   'bids.title': { en: 'Bid Comparison', ta: 'ஏல ஒப்பீடு' },
   'bids.comparing': { en: 'Comparing', ta: 'ஒப்பிடுகிறது' },
   'bids.bidsFor': { en: 'bids for load', ta: 'சுமைக்கான ஏலங்கள்' },
+  'bids.comparingFor': { en: 'Comparing {count} bids for load {loadId}', ta: 'சுமை {loadId}-க்கான {count} ஏலங்களை ஒப்பிடுகிறது' },
   'bids.bestPrice': { en: 'Best Price', ta: 'சிறந்த விலை' },
   'bids.bidPrice': { en: 'Bid Price', ta: 'ஏல விலை' },
   'bids.assign': { en: 'Assign', ta: 'ஒதுக்கு' },
@@ -126,6 +128,7 @@ const translations: Record<string, Record<Language, string>> = {
   // Drivers
   'drivers.title': { en: 'Driver Approval', ta: 'ஓட்டுநர் ஒப்புதல்' },
   'drivers.pending': { en: 'drivers pending review', ta: 'ஓட்டுநர்கள் மதிப்பாய்வு நிலுவையில்' },
+  'drivers.summary': { en: '{count} drivers pending review', ta: '{count} ஓட்டுநர்கள் மதிப்பாய்வு நிலுவையில் உள்ளனர்' },
   'drivers.searchPlaceholder': { en: 'Search drivers...', ta: 'ஓட்டுநர்களைத் தேடுக...' },
   'drivers.approve': { en: 'Approve', ta: 'ஒப்புதல்' },
   'drivers.documents': { en: 'Documents', ta: 'ஆவணங்கள்' },
@@ -136,6 +139,7 @@ const translations: Record<string, Record<Language, string>> = {
   // Payments
   'payments.title': { en: 'Payment Management', ta: 'கொடுப்பனவு மேலாண்மை' },
   'payments.totalTracked': { en: 'total payments tracked', ta: 'மொத்த கொடுப்பனவுகள் கண்காணிக்கப்பட்டது' },
+  'payments.summary': { en: '{count} total payments tracked', ta: 'மொத்தம் {count} கொடுப்பனவுகள் கண்காணிக்கப்பட்டுள்ளன' },
   'payments.exportExcel': { en: 'Export Excel', ta: 'எக்சல் ஏற்றுமதி' },
   'payments.searchPlaceholder': { en: 'Search payments...', ta: 'கொடுப்பனவுகளை தேடுக...' },
   'payments.totalPaid': { en: 'Total Paid', ta: 'மொத்த செலுத்தியது' },
@@ -168,30 +172,44 @@ const translations: Record<string, Record<Language, string>> = {
   // Common
   'common.total': { en: 'Total', ta: 'மொத்தம்' },
   'common.filter': { en: 'Status', ta: 'நிலை' },
-};
+} satisfies Record<string, Record<Language, string>>;
+
+export type TranslationKey = keyof typeof translations;
+export type LooseTranslationKey = TranslationKey | (string & {});
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: LooseTranslationKey, params?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(
-    () => (localStorage.getItem('kkp_lang') as Language) || 'en'
-  );
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem('kkp_lang') as Language;
+    if (saved === 'en' || saved === 'ta') return saved;
+    const browserLang = navigator.language.split('-')[0];
+    if (browserLang === 'ta') return 'ta';
+    return 'en';
+  });
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem('kkp_lang', lang);
   };
 
-  const t = (key: string): string => {
-    return translations[key]?.[language] || key;
+  const t = (key: LooseTranslationKey, params?: Record<string, string | number>): string => {
+    const entry = translations[key as keyof typeof translations];
+    let val = entry?.[language] || entry?.['en'] || (key as string);
+    if (params) {
+      Object.entries(params).forEach(([pKey, pVal]) => {
+        val = val.replace(new RegExp(`\\{${pKey}\\}`, 'g'), String(pVal));
+      });
+    }
+    return val;
   };
 
   return (
