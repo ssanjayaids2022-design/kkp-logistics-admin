@@ -39,11 +39,11 @@ export default function PaymentListScreen() {
   const [outsideForm] = Form.useForm();
   const { t } = useLanguage();
   const location = useLocation();
-  const { user } = useAuth();
+  const { can } = useAuth();
   const { loads } = useLoads();
   const { addNotification } = useNotifications();
 
-  const isChairman = user?.role === 'CHAIRMAN';
+  const isChairman = !can('payments.edit');
 
   // Surface overdue payments as notifications (once per overdue id, persisted so
   // reloads don't re-spam the bell).

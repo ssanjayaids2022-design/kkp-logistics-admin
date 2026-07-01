@@ -75,9 +75,9 @@ export default function DriverApprovalScreen() {
   const [addForm] = Form.useForm();
   const { t } = useLanguage();
   const location = useLocation();
-  const { user } = useAuth();
+  const { can } = useAuth();
 
-  const isReadOnly = user?.role === 'CHAIRMAN' || user?.role === 'LOAD_ADMIN';
+  const isReadOnly = !can('drivers.approve');
 
   const loadDrivers = React.useCallback(async () => {
     try {

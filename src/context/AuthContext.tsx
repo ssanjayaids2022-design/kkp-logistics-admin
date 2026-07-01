@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { User } from '../types';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import type { User, Role, Permission, RolePermissions } from '../types';
+import { loadRolePermissions, saveRolePermissions, RBAC_STORAGE_KEY } from '../auth/permissions';
 
 export interface PasswordResetRequest {
   id: string;
@@ -20,6 +21,11 @@ interface AuthContextType {
   changePassword: (userId: string, newPassword: string) => boolean;
   requestPasswordReset: (username: string, reason?: string) => boolean;
   loading: boolean;
+  // Data-driven RBAC (the Access Matrix is the single source of truth).
+  permissions: Set<Permission>;
+  can: (perm: Permission) => boolean;
+  rolePermissions: RolePermissions;
+  updateRolePermissions: (role: Role, perms: Permission[]) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +37,7 @@ const DEFAULT_USERS = [
   { username: 'loadadmin', password: 'load123', data: { id: 'USR-003', name: 'Load Dispatcher', email: 'loadadmin@kkptransports.com', role: 'LOAD_ADMIN' as const, scope: 'South Region (Chennai/Cbe)', status: 'Active' } },
   { username: 'karthik', password: 'admin123', data: { id: 'USR-004', name: 'Karthik Raja', email: 'karthik.r@kkptransports.com', role: 'MANAGER' as const, scope: 'Tamil Nadu Operations', status: 'Active' } },
   { username: 'priya', password: 'admin123', data: { id: 'USR-005', name: 'Priya Sharma', email: 'priya.s@kkptransports.com', role: 'LOAD_ADMIN' as const, scope: 'North Region (Delhi)', status: 'Suspended' } },
+  { username: 'techadmin', password: 'tech123', data: { id: 'USR-006', name: 'Technical Admin', email: 'techadmin@kkptransports.com', role: 'TECH_ADMIN' as const, scope: 'System', status: 'Active' } },
 ];
 
 // Seed default accounts when missing, but DO NOT wipe existing data — otherwise
@@ -58,6 +65,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rolePermissions, setRolePermissions] = useState<RolePermissions>(() => loadRolePermissions());
+
+  const permissions = useMemo(
+    () => new Set<Permission>(user ? (rolePermissions[user.role] || []) : []),
+    [user, rolePermissions],
+  );
+  const can = useCallback((perm: Permission) => permissions.has(perm), [permissions]);
+
+  // Technical-Admin edits to the Access Matrix — persisted + broadcast to tabs.
+  const updateRolePermissions = useCallback((role: Role, perms: Permission[]) => {
+    setRolePermissions(prev => {
+      const next = { ...prev, [role]: perms };
+      saveRolePermissions(next);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     initializeUsers();
@@ -96,6 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'kkp_users' || e.key === 'kkp_auth_user_id' || e.key === 'kkp_auth_role') {
         syncAuth();
+      }
+      if (e.key === RBAC_STORAGE_KEY) {
+        setRolePermissions(loadRolePermissions());
       }
     };
 
@@ -191,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, changePassword, requestPasswordReset, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, changePassword, requestPasswordReset, loading, permissions, can, rolePermissions, updateRolePermissions }}>
       {children}
     </AuthContext.Provider>
   );

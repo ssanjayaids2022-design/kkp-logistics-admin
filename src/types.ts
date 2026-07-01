@@ -94,12 +94,42 @@ export interface Payment {
   notes?: string;
 }
 
+export type Role = 'CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN' | 'TECH_ADMIN';
+
+// Canonical capability keys — the single source of truth the Access Matrix drives.
+export type Permission =
+  | 'dashboard.view'
+  | 'loads.view'
+  | 'loads.post'
+  | 'loads.pricing.edit'
+  | 'loads.delete'
+  | 'match.view'
+  | 'match.assign'
+  | 'tracking.view'
+  | 'drivers.view'
+  | 'drivers.approve'
+  | 'payments.view'
+  | 'payments.edit'
+  | 'analytics.operational'
+  | 'analytics.financial'
+  | 'audit.view'
+  | 'audit.all'          // sees everyone's logs (vs. only own)
+  | 'admin.manage'
+  | 'access.matrix.edit'
+  | 'users.password.reset'
+  | 'settings.enterprise';
+
+export type RolePermissions = Record<Role, Permission[]>;
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN';
+  role: Role;
   avatar?: string;
+  scope?: string;
+  status?: 'Active' | 'Suspended';
+  lastLogin?: string;
 }
 
 export interface LoginCredentials {

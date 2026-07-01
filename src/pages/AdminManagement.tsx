@@ -4,6 +4,7 @@ const Card = AntdCard as any;
 import { UserAddOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, DeleteOutlined, SearchOutlined, SafetyCertificateOutlined, KeyOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import PageHeader from '../components/PageHeader';
 import { useAuth, type PasswordResetRequest } from '../context/AuthContext';
+import type { Role } from '../types';
 
 const { Text } = Typography;
 
@@ -11,7 +12,7 @@ interface AdminAccount {
   key: string;
   name: string;
   email: string;
-  role: 'CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN';
+  role: Role;
   scope: string;
   status: 'Active' | 'Suspended';
   username?: string;
@@ -38,8 +39,8 @@ const fmtLogin = (iso?: string) => {
 };
 
 export default function AdminManagement() {
-  const { user, changePassword } = useAuth();
-  const isChairman = user?.role === 'CHAIRMAN';
+  const { changePassword, can } = useAuth();
+  const canManage = can('admin.manage');
 
   const readAdmins = () => mapUsers(JSON.parse(localStorage.getItem('kkp_users') || '[]'));
   const readRequests = (): PasswordResetRequest[] =>
@@ -69,10 +70,6 @@ export default function AdminManagement() {
   }, []);
 
   const openChangePassword = (record: AdminAccount) => {
-    if (record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN') {
-      message.error("You cannot change the Chairman's password.");
-      return;
-    }
     pwForm.resetFields();
     setPwTarget(record);
   };
@@ -80,10 +77,6 @@ export default function AdminManagement() {
   const handleChangePassword = () => {
     pwForm.validateFields().then(({ newPassword }) => {
       if (!pwTarget) return;
-      if (pwTarget.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN') {
-        message.error("You cannot change the Chairman's password.");
-        return;
-      }
       changePassword(pwTarget.key, newPassword);
       // Mark any matching pending reset request resolved.
       const reqs = readRequests().map(r =>
@@ -143,12 +136,10 @@ export default function AdminManagement() {
         const currentUsers = JSON.parse(localStorage.getItem('kkp_users') || '[]');
         const updatedUsers = currentUsers.map((u: any) => {
           if (u.data.id === editingKey) {
-            // A manager may not change the Chairman's password.
-            const lockPw = u.data.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN';
             return {
               ...u,
               username: values.username || u.username,
-              password: lockPw ? u.password : (values.password || u.password),
+              password: values.password || u.password,
               data: {
                 ...u.data,
                 name: values.name,
@@ -200,8 +191,8 @@ export default function AdminManagement() {
 
   const handleToggleStatus = (key: string) => {
     const targetAdmin = admins.find(a => a.key === key);
-    if (targetAdmin?.role === 'CHAIRMAN') {
-      message.error('Cannot suspend a Chairman account.');
+    if (targetAdmin?.role === 'CHAIRMAN' || targetAdmin?.role === 'TECH_ADMIN') {
+      message.error(`Cannot suspend a ${targetAdmin.role === 'CHAIRMAN' ? 'Chairman' : 'Technical Admin'} account.`);
       return;
     }
     const updatedList = admins.map(item => {
@@ -227,8 +218,8 @@ export default function AdminManagement() {
 
   const handleDelete = (key: string) => {
     const targetAdmin = admins.find(a => a.key === key);
-    if (targetAdmin?.role === 'CHAIRMAN') {
-      message.error('Cannot delete a Chairman account.');
+    if (targetAdmin?.role === 'CHAIRMAN' || targetAdmin?.role === 'TECH_ADMIN') {
+      message.error(`Cannot delete a ${targetAdmin.role === 'CHAIRMAN' ? 'Chairman' : 'Technical Admin'} account.`);
       return;
     }
     Modal.confirm({
@@ -255,7 +246,7 @@ export default function AdminManagement() {
       key: 'name',
       render: (_, record: AdminAccount) => (
         <Space>
-          <Avatar style={{ backgroundColor: record.role === 'CHAIRMAN' ? '#FFC20E' : record.role === 'MANAGER' ? '#0B4C8C' : '#0EA5E9', color: record.role === 'CHAIRMAN' ? '#0F172A' : '#FFFFFF', fontWeight: 700 }}>
+          <Avatar style={{ backgroundColor: record.role === 'CHAIRMAN' ? '#FFC20E' : record.role === 'MANAGER' ? '#0B4C8C' : record.role === 'TECH_ADMIN' ? '#7C3AED' : '#0EA5E9', color: record.role === 'CHAIRMAN' ? '#0F172A' : '#FFFFFF', fontWeight: 700 }}>
             {record.name.charAt(0)}
           </Avatar>
           <div>
@@ -286,8 +277,8 @@ export default function AdminManagement() {
       dataIndex: 'role',
       key: 'role',
       render: (role: string) => (
-        <Tag color={role === 'CHAIRMAN' ? 'gold' : role === 'MANAGER' ? 'blue' : 'cyan'} style={{ fontWeight: 700 }}>
-          {role === 'CHAIRMAN' ? '👑 CHAIRMAN' : role === 'MANAGER' ? '🛡️ MANAGER' : '📋 LOAD ADMIN'}
+        <Tag color={role === 'CHAIRMAN' ? 'gold' : role === 'MANAGER' ? 'blue' : role === 'TECH_ADMIN' ? 'purple' : 'cyan'} style={{ fontWeight: 700 }}>
+          {role === 'CHAIRMAN' ? '👑 CHAIRMAN' : role === 'MANAGER' ? '🛡️ MANAGER' : role === 'TECH_ADMIN' ? '🛠️ TECH ADMIN' : '📋 LOAD ADMIN'}
         </Tag>
       ),
     },
@@ -327,11 +318,10 @@ export default function AdminManagement() {
               onClick={() => handleOpenModal(record)}
             />
           </Tooltip>
-          <Tooltip title={record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN' ? "Chairman's password is protected" : 'Change Password'}>
+          <Tooltip title="Change Password">
             <Button
               type="text"
-              icon={<KeyOutlined style={{ color: record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN' ? '#D0D5DD' : '#7C3AED' }} />}
-              disabled={record.role === 'CHAIRMAN' && user?.role !== 'CHAIRMAN'}
+              icon={<KeyOutlined style={{ color: '#7C3AED' }} />}
               onClick={() => openChangePassword(record)}
             />
           </Tooltip>
@@ -360,7 +350,7 @@ export default function AdminManagement() {
         title="Admin Users Directory"
         subtitle="Manage administrator accounts, assign regional scopes, and control system credentials"
         extra={
-          !isChairman && (
+          canManage && (
             <Button
               type="primary"
               icon={<UserAddOutlined />}
@@ -374,7 +364,7 @@ export default function AdminManagement() {
         }
       />
 
-      {!isChairman && requests.filter(r => r.status === 'pending').length > 0 && (
+      {canManage && requests.filter(r => r.status === 'pending').length > 0 && (
         <Card
           className="kkp-card"
           style={{ marginBottom: 16, borderLeft: '4px solid #F4811F' }}
@@ -417,7 +407,7 @@ export default function AdminManagement() {
         }
       >
         <Table
-          columns={isChairman ? columns.filter(c => c.key !== 'actions') : columns}
+          columns={canManage ? columns : columns.filter(c => c.key !== 'actions')}
           dataSource={filteredAdmins}
           pagination={false}
           className="kkp-table"
@@ -477,9 +467,10 @@ export default function AdminManagement() {
           >
             <Select
               options={[
-                { value: 'LOAD_ADMIN', label: 'Load Admin (Operational)' },
-                { value: 'MANAGER', label: 'Manager (Full Access)' },
-                { value: 'CHAIRMAN', label: 'Chairman (Read-Only CEO)' },
+                { value: 'LOAD_ADMIN', label: 'Load Admin (Field ops)' },
+                { value: 'MANAGER', label: 'Manager (Operations)' },
+                { value: 'CHAIRMAN', label: 'Chairman (Oversight)' },
+                { value: 'TECH_ADMIN', label: 'Technical Admin (Access & system)' },
               ]}
             />
           </Form.Item>
@@ -496,6 +487,7 @@ export default function AdminManagement() {
                 { value: 'South Region (Chennai/Cbe)', label: 'South Region (Chennai/Cbe)' },
                 { value: 'Tamil Nadu Operations', label: 'Tamil Nadu Operations' },
                 { value: 'North Region (Delhi)', label: 'North Region (Delhi)' },
+                { value: 'System', label: 'System (Technical Admin)' },
               ]}
             />
           </Form.Item>

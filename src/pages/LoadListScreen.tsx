@@ -41,7 +41,7 @@ export default function LoadListScreen() {
   const location = useLocation();
   const { loads, cancelLoad, loading, error, refresh } = useLoads();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { can } = useAuth();
 
   React.useEffect(() => {
     if (location.state?.searchText !== undefined) {
@@ -50,8 +50,9 @@ export default function LoadListScreen() {
     }
   }, [location.state]);
 
-  const isChairman = user?.role === 'CHAIRMAN';
-  const canDelete = user?.role === 'MANAGER' || user?.role === 'LOAD_ADMIN';
+  const canPost = can('loads.post');
+  const canDelete = can('loads.delete');
+  const canMatch = can('match.view');
 
   const filteredLoads = loads.filter(load => {
     const q = searchText.toLowerCase();
@@ -158,12 +159,15 @@ export default function LoadListScreen() {
       key: 'actions',
       width: 50,
       render: (_, record) => {
-        const menuItems = [
-          { key: 'view', icon: <ThunderboltOutlined />, label: 'Find Drivers', onClick: () => navigate(`/match/${record.id}`) },
-        ];
-        if (!isChairman) {
+        const menuItems: any[] = [];
+        if (canMatch) {
+          menuItems.push({ key: 'view', icon: <ThunderboltOutlined />, label: 'Find Drivers', onClick: () => navigate(`/match/${record.id}`) });
+        }
+        if (canPost) {
+          menuItems.push({ key: 'edit', icon: <EditOutlined />, label: t('loads.editLoad') } as any);
+        }
+        if (canDelete) {
           menuItems.push(
-            { key: 'edit', icon: <EditOutlined />, label: t('loads.editLoad') } as any,
             { type: 'divider' } as any,
             { key: 'delete', icon: <DeleteOutlined />, label: t('loads.cancelLoad'), danger: true, onClick: () => handleDeleteClick(record) } as any
           );
@@ -181,10 +185,10 @@ export default function LoadListScreen() {
   ];
 
   const handleDeleteClick = (load: Load) => {
-    if (isChairman) {
+    if (!canDelete) {
       Modal.error({
         title: 'Access Restricted',
-        content: 'As Chairman, you have read-only auditor access and cannot delete or cancel loads.',
+        content: 'You do not have permission to delete or cancel loads.',
       });
       return;
     }
@@ -243,7 +247,7 @@ export default function LoadListScreen() {
             >
               Export
             </Button>
-            {!isChairman && (
+            {canPost && (
               <GoldButton icon={<PlusOutlined />} onClick={() => navigate('/loads/new')}>
                 {t('loads.postNew')}
               </GoldButton>

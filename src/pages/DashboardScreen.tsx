@@ -130,7 +130,7 @@ function AnimatedKPICard({ title, numericValue, displayValue, trend, trendUp, ic
 export default function DashboardScreen() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { loads, updatePricing } = useLoads();
 
   type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
@@ -171,7 +171,7 @@ export default function DashboardScreen() {
       value={getP(id)[field] as number | null}
       min={0}
       controls={false}
-      disabled={isChairman}
+      disabled={!canPricing}
       style={{ width: 96 }}
       prefix="₹"
       formatter={(v: any) => (v == null || v === '' ? '' : `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','))}
@@ -207,7 +207,7 @@ export default function DashboardScreen() {
             value={total}
             min={0}
             controls={false}
-            disabled={isChairman}
+            disabled={!canPricing}
             style={{ width: 96 }}
             prefix="₹"
             formatter={(v: any) => (v == null || v === '' ? '' : `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','))}
@@ -232,7 +232,7 @@ export default function DashboardScreen() {
         <Switch
           size="small"
           checked={getP(l.id).amountVisible}
-          disabled={isChairman}
+          disabled={!canPricing}
           onChange={(c) => { setField(l.id, 'amountVisible', c); saveField(l.id, { amountVisible: c }); }}
         />
       ) },
@@ -240,8 +240,10 @@ export default function DashboardScreen() {
   const isChairman = user?.role === 'CHAIRMAN';
   const isManager = user?.role === 'MANAGER';
   const isLoadAdmin = user?.role === 'LOAD_ADMIN';
-  const showFinancials = isChairman || isManager;
-  const isSystemAdmin = isChairman || isManager;
+  const isTechAdmin = user?.role === 'TECH_ADMIN';
+  const canPricing = can('loads.pricing.edit');
+  const showFinancials = can('analytics.financial');
+  const isSystemAdmin = can('audit.all');
 
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
@@ -298,10 +300,10 @@ export default function DashboardScreen() {
       { title: 'Active Trips', numericValue: metrics.trips, displayValue: String(metrics.trips), trend: '+4% from yesterday', trendUp: true, icon: <CarOutlined />, color: '#0B4C8C',
         drill: [{ label: 'On-Time', value: `${metrics.trips - 2}`, color: '#10B981' }, { label: 'Delayed', value: '2', color: '#F4811F' }, { label: 'Critical', value: '0', color: '#EF4444' }], visible: true },
       { title: 'Pending POD Reviews', numericValue: metrics.pod, displayValue: String(metrics.pod), trend: '+3 from yesterday', trendUp: false, icon: <AuditOutlined />, color: '#0B4C8C',
-        drill: [{ label: 'Under Review', value: String(metrics.pod), color: '#0B4C8C' }, { label: 'Cleared Today', value: '7', color: '#10B981' }], visible: !isLoadAdmin },
+        drill: [{ label: 'Under Review', value: String(metrics.pod), color: '#0B4C8C' }, { label: 'Cleared Today', value: '7', color: '#10B981' }], visible: !isLoadAdmin && !isTechAdmin },
     ];
     return list.filter(c => c.visible);
-  }, [metrics, isLoadAdmin]);
+  }, [metrics, isLoadAdmin, isTechAdmin]);
 
   const timelineItems = useMemo(() =>
     recentActivity.slice(0, 6).map((item) => ({
@@ -325,13 +327,13 @@ export default function DashboardScreen() {
 
   const quickActions = useMemo(() => {
     const list = [
-      { label: t('dashboard.postLoad'), icon: <PlusOutlined />, path: '/loads/new', color: '#F4811F', visible: !isChairman },
-      { label: 'Match Loads', icon: <ThunderboltOutlined />, path: '/match', color: '#0B4C8C', visible: true },
-      { label: t('dashboard.approveDrivers'), icon: <TeamOutlined />, path: '/drivers', color: '#10B981', visible: !isChairman && !isLoadAdmin },
-      { label: t('dashboard.revenue'), icon: <DollarOutlined />, path: '/payments', color: '#FFC20E', visible: showFinancials && !isChairman },
+      { label: t('dashboard.postLoad'), icon: <PlusOutlined />, path: '/loads/new', color: '#F4811F', visible: can('loads.post') },
+      { label: 'Match Loads', icon: <ThunderboltOutlined />, path: '/match', color: '#0B4C8C', visible: can('match.view') },
+      { label: t('dashboard.approveDrivers'), icon: <TeamOutlined />, path: '/drivers', color: '#10B981', visible: can('drivers.approve') },
+      { label: t('dashboard.revenue'), icon: <DollarOutlined />, path: '/payments', color: '#FFC20E', visible: can('payments.edit') },
     ];
     return list.filter(a => a.visible);
-  }, [isChairman, isLoadAdmin, showFinancials, t]);
+  }, [can, t]);
 
   return (
     <div>
@@ -362,7 +364,7 @@ export default function DashboardScreen() {
                 Refresh
               </Button>
             </Tooltip>
-            {!isChairman && (
+            {can('loads.post') && (
               <GoldButton size="large" icon={<PlusOutlined />} onClick={() => navigate('/loads/new')}>
                 {t('dashboard.createLoad')}
               </GoldButton>
@@ -385,8 +387,8 @@ export default function DashboardScreen() {
         </Space>
         <Space>
           <Badge status="processing" color={isSystemAdmin ? '#FFC20E' : '#0B4C8C'} text={<Text style={{ fontSize: 11, color: '#667085' }}>Auto-refreshing every 60s</Text>} />
-          <Tag color={isChairman ? 'gold' : isManager ? 'blue' : 'cyan'} style={{ fontWeight: 700 }}>
-            {isChairman ? '👑 CHAIRMAN MODE' : isManager ? '🛡️ MANAGER MODE' : '📋 LOAD ADMIN MODE'}
+          <Tag color={isChairman ? 'gold' : isManager ? 'blue' : isTechAdmin ? 'purple' : 'cyan'} style={{ fontWeight: 700 }}>
+            {isChairman ? '👑 CHAIRMAN MODE' : isManager ? '🛡️ MANAGER MODE' : isTechAdmin ? '🛠️ TECHNICAL ADMIN' : '📋 LOAD ADMIN MODE'}
           </Tag>
         </Space>
       </div>

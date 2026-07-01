@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, App as AntApp, Spin } from 'antd';
 import { luxuryGoldTheme, luxuryGoldDarkTheme } from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import type { Permission } from './types';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import AppLayout from './layouts/AppLayout';
 import LoginScreen from './pages/LoginScreen';
@@ -53,15 +54,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-function RoleRoute({
-  children,
-  allowedRoles,
-}: {
-  children: React.ReactNode;
-  allowedRoles: ('CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN')[];
-}) {
-  const { user } = useAuth();
-  if (!user || !allowedRoles.includes(user.role)) {
+function PermissionRoute({ children, perm }: { children: React.ReactNode; perm: Permission }) {
+  const { can } = useAuth();
+  if (!can(perm)) {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;
@@ -85,124 +80,30 @@ function AppRoutes() {
         }
       >
         <Route index element={<DashboardScreen />} />
-        <Route path="loads" element={<LoadListScreen />} />
-        <Route path="loads/new" element={<LoadPostingScreen />} />
-        <Route path="match" element={<MatchScreen />} />
-        <Route path="match/:loadId" element={<MatchLoadScreen />} />
-        <Route path="tracking" element={<TrackingScreen />} />
-        <Route path="drivers" element={<DriverApprovalScreen />} />
-        <Route
-          path="payments"
-          element={
-            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
-              <PaymentListScreen />
-            </RoleRoute>
-          }
-        />
+        <Route path="loads" element={<PermissionRoute perm="loads.view"><LoadListScreen /></PermissionRoute>} />
+        <Route path="loads/new" element={<PermissionRoute perm="loads.post"><LoadPostingScreen /></PermissionRoute>} />
+        <Route path="match" element={<PermissionRoute perm="match.view"><MatchScreen /></PermissionRoute>} />
+        <Route path="match/:loadId" element={<PermissionRoute perm="match.view"><MatchLoadScreen /></PermissionRoute>} />
+        <Route path="tracking" element={<PermissionRoute perm="tracking.view"><TrackingScreen /></PermissionRoute>} />
+        <Route path="drivers" element={<PermissionRoute perm="drivers.view"><DriverApprovalScreen /></PermissionRoute>} />
+        <Route path="payments" element={<PermissionRoute perm="payments.view"><PaymentListScreen /></PermissionRoute>} />
         <Route path="profile" element={<ProfileScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
 
         {/* ── Analytics Routes (lazy loaded) ── */}
-        <Route
-          path="analytics/predictive"
-          element={
-            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
-              <Suspense fallback={<PageLoader />}>
-                <PredictiveAnalytics />
-              </Suspense>
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="analytics/financial"
-          element={
-            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
-              <Suspense fallback={<PageLoader />}>
-                <FinancialAnalytics />
-              </Suspense>
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="analytics/loads"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <LoadAnalytics />
-            </Suspense>
-          }
-        />
-        <Route
-          path="analytics/drivers"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <DriverAnalytics />
-            </Suspense>
-          }
-        />
-        <Route
-          path="analytics/trips"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <TripAnalytics />
-            </Suspense>
-          }
-        />
-        <Route
-          path="analytics/payments-analytics"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <PaymentAnalyticsPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="analytics/operations"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <OperationalEfficiency />
-            </Suspense>
-          }
-        />
-        <Route
-          path="analytics/routes"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <RouteAnalytics />
-            </Suspense>
-          }
-        />
+        <Route path="analytics/predictive" element={<PermissionRoute perm="analytics.financial"><Suspense fallback={<PageLoader />}><PredictiveAnalytics /></Suspense></PermissionRoute>} />
+        <Route path="analytics/financial" element={<PermissionRoute perm="analytics.financial"><Suspense fallback={<PageLoader />}><FinancialAnalytics /></Suspense></PermissionRoute>} />
+        <Route path="analytics/loads" element={<PermissionRoute perm="analytics.operational"><Suspense fallback={<PageLoader />}><LoadAnalytics /></Suspense></PermissionRoute>} />
+        <Route path="analytics/drivers" element={<PermissionRoute perm="analytics.operational"><Suspense fallback={<PageLoader />}><DriverAnalytics /></Suspense></PermissionRoute>} />
+        <Route path="analytics/trips" element={<PermissionRoute perm="analytics.operational"><Suspense fallback={<PageLoader />}><TripAnalytics /></Suspense></PermissionRoute>} />
+        <Route path="analytics/payments-analytics" element={<PermissionRoute perm="analytics.financial"><Suspense fallback={<PageLoader />}><PaymentAnalyticsPage /></Suspense></PermissionRoute>} />
+        <Route path="analytics/operations" element={<PermissionRoute perm="analytics.operational"><Suspense fallback={<PageLoader />}><OperationalEfficiency /></Suspense></PermissionRoute>} />
+        <Route path="analytics/routes" element={<PermissionRoute perm="analytics.operational"><Suspense fallback={<PageLoader />}><RouteAnalytics /></Suspense></PermissionRoute>} />
 
         {/* ── System Administration Routes ── */}
-        <Route
-          path="admin-users"
-          element={
-            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
-              <Suspense fallback={<PageLoader />}>
-                <AdminManagement />
-              </Suspense>
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="access-matrix"
-          element={
-            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
-              <Suspense fallback={<PageLoader />}>
-                <AccessMatrix />
-              </Suspense>
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="audit-logs"
-          element={
-            <RoleRoute allowedRoles={['CHAIRMAN', 'MANAGER']}>
-              <Suspense fallback={<PageLoader />}>
-                <AuditLogs />
-              </Suspense>
-            </RoleRoute>
-          }
-        />
+        <Route path="admin-users" element={<PermissionRoute perm="admin.manage"><Suspense fallback={<PageLoader />}><AdminManagement /></Suspense></PermissionRoute>} />
+        <Route path="access-matrix" element={<PermissionRoute perm="access.matrix.edit"><Suspense fallback={<PageLoader />}><AccessMatrix /></Suspense></PermissionRoute>} />
+        <Route path="audit-logs" element={<PermissionRoute perm="audit.view"><Suspense fallback={<PageLoader />}><AuditLogs /></Suspense></PermissionRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,13 +1,12 @@
-// ─── ⚠️ TEMPORARY IN-MEMORY MOCK BACKEND ⚠️ ──────────────────────────────────
-// Lets the whole app run with NO server so the new flows (Add Driver,
-// Fix Match / Re-match Load, Outside Payment) can be tested end-to-end.
-//
-// TO REMOVE once the local backend is ready:
-//   1. set  USE_MOCK = false  in apiService.ts
-//   2. delete this file (mockBackend.ts)
+// ─── IN-MEMORY SAMPLE-DATA BACKEND ───────────────────────────────────────────
+// Powers the entire admin dashboard with no server, so `npm run dev` works
+// out of the box. Every apiService call resolves here.
 //
 // State lives in module-level arrays, so changes persist for the browser
-// session (until refresh) — exactly long enough to test a full flow.
+// session (until refresh) — long enough to walk through a full flow.
+//
+// To connect a real backend later, implement the same methods against your API
+// and export that object as `apiService` in apiService.ts.
 
 import type { Load, Driver, Bid } from '../types';
 import { loads as seedLoads, drivers as seedDrivers, bids as seedBids } from '../data/mockData';

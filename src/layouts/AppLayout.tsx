@@ -65,14 +65,13 @@ export default function AppLayout() {
   const screens = useBreakpoint();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const { notifications, unreadCount, markAllRead } = useNotifications();
   const isMobile = !screens.lg;
 
   const isChairman = user?.role === 'CHAIRMAN';
   const isManager = user?.role === 'MANAGER';
-  const isLoadAdmin = user?.role === 'LOAD_ADMIN';
 
   const { loads } = useLoads();
   const [searchValue, setSearchValue] = useState('');
@@ -119,16 +118,22 @@ export default function AppLayout() {
         { value: JSON.stringify({ type: 'page', path: '/' }), label: <div className="kkp-items-center"><DashboardOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Dashboard</span></div> },
         { value: JSON.stringify({ type: 'page', path: '/loads' }), label: <div className="kkp-items-center"><CarOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Loads Ledger</span></div> },
       ];
-      if (!isChairman) {
+      if (can('loads.post')) {
         quickNavOptions.push(
           { value: JSON.stringify({ type: 'page', path: '/loads/new' }), label: <div className="kkp-items-center"><FormOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Post New Load</span></div> }
         );
       }
-      quickNavOptions.push(
-        { value: JSON.stringify({ type: 'page', path: '/match' }), label: <div className="kkp-items-center"><ThunderboltOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Match Load</span></div> },
-        { value: JSON.stringify({ type: 'page', path: '/drivers' }), label: <div className="kkp-items-center"><TeamOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Driver Approvals</span></div> }
-      );
-      if (isChairman || isManager) {
+      if (can('match.view')) {
+        quickNavOptions.push(
+          { value: JSON.stringify({ type: 'page', path: '/match' }), label: <div className="kkp-items-center"><ThunderboltOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Match Load</span></div> }
+        );
+      }
+      if (can('drivers.view')) {
+        quickNavOptions.push(
+          { value: JSON.stringify({ type: 'page', path: '/drivers' }), label: <div className="kkp-items-center"><TeamOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Driver Approvals</span></div> }
+        );
+      }
+      if (can('payments.view')) {
         quickNavOptions.push(
           { value: JSON.stringify({ type: 'page', path: '/payments' }), label: <div className="kkp-items-center"><DollarOutlined style={{ color: '#0B4C8C', marginRight: 8 }} /><span style={{ color: '#101828', fontWeight: 500 }}>Payments Ledger</span></div> }
         );
@@ -146,34 +151,36 @@ export default function AppLayout() {
     // 1. Pages
     const pages = [
       { name: 'Dashboard', path: '/' },
-      { name: 'Loads List', path: '/loads' },
     ];
-    if (!isChairman) {
-      pages.push({ name: 'Post New Load', path: '/loads/new' });
+    if (can('loads.view')) pages.push({ name: 'Loads List', path: '/loads' });
+    if (can('loads.post')) pages.push({ name: 'Post New Load', path: '/loads/new' });
+    if (can('match.view')) pages.push({ name: 'Match Load', path: '/match' });
+    if (can('tracking.view')) pages.push({ name: 'Live Tracking', path: '/tracking' });
+    if (can('drivers.view')) pages.push({ name: 'Driver Directory / Approvals', path: '/drivers' });
+    if (can('analytics.operational')) {
+      pages.push(
+        { name: 'Driver Analytics', path: '/analytics/drivers' },
+        { name: 'Load Analytics', path: '/analytics/loads' },
+        { name: 'Trip Analytics', path: '/analytics/trips' },
+        { name: 'Operations Analytics', path: '/analytics/operations' },
+        { name: 'Route Analytics', path: '/analytics/routes' }
+      );
     }
     pages.push(
-      { name: 'Match Load', path: '/match' },
-      { name: 'Live Tracking', path: '/tracking' },
-      { name: 'Driver Directory / Approvals', path: '/drivers' },
-      { name: 'Driver Analytics', path: '/analytics/drivers' },
-      { name: 'Load Analytics', path: '/analytics/loads' },
-      { name: 'Trip Analytics', path: '/analytics/trips' },
-      { name: 'Operations Analytics', path: '/analytics/operations' },
-      { name: 'Route Analytics', path: '/analytics/routes' },
       { name: 'Profile Screen', path: '/profile' },
       { name: 'Settings Screen', path: '/settings' }
     );
-    if (isChairman || isManager) {
+    if (can('payments.view')) pages.push({ name: 'Payments Ledger', path: '/payments' });
+    if (can('analytics.financial')) {
       pages.push(
-        { name: 'Payments Ledger', path: '/payments' },
         { name: 'Payment Analytics', path: '/analytics/payments-analytics' },
         { name: 'Predictive Analytics', path: '/analytics/predictive' },
-        { name: 'Financial Analytics', path: '/analytics/financial' },
-        { name: 'Admin Management', path: '/admin-users' },
-        { name: 'Access Matrix', path: '/access-matrix' },
-        { name: 'Audit Logs', path: '/audit-logs' }
+        { name: 'Financial Analytics', path: '/analytics/financial' }
       );
     }
+    if (can('admin.manage')) pages.push({ name: 'Admin Management', path: '/admin-users' });
+    if (can('access.matrix.edit')) pages.push({ name: 'Access Matrix', path: '/access-matrix' });
+    if (can('audit.view')) pages.push({ name: 'Audit Logs', path: '/audit-logs' });
     const matchedPages = pages
       .filter((p) => p.name.toLowerCase().includes(query))
       .map((p) => ({
@@ -242,7 +249,7 @@ export default function AppLayout() {
 
     // 4. Payments
     let matchedPayments: any[] = [];
-    if (isChairman || isManager) {
+    if (can('payments.view')) {
       matchedPayments = payments
         .filter((p) =>
           p.loadId.toLowerCase().includes(query) ||
@@ -295,45 +302,37 @@ export default function AppLayout() {
     }
 
     return results;
-  }, [searchValue, loads, isChairman, isManager]);
+  }, [searchValue, loads, can]);
 
   const menuItems = useMemo(() => {
-    const items = [
+    const items: any[] = [
       { key: '/', icon: <DashboardOutlined />, label: t('nav.dashboard') || 'Dashboard' },
-      { key: '/loads', icon: <CarOutlined />, label: t('nav.loads') },
     ];
 
-    if (!isChairman) {
-      items.push({ key: '/loads/new', icon: <FormOutlined />, label: t('nav.postLoad') });
-    }
+    if (can('loads.view')) items.push({ key: '/loads', icon: <CarOutlined />, label: t('nav.loads') });
+    if (can('loads.post')) items.push({ key: '/loads/new', icon: <FormOutlined />, label: t('nav.postLoad') });
+    if (can('match.view')) items.push({ key: '/match', icon: <ThunderboltOutlined />, label: 'Match' });
+    if (can('tracking.view')) items.push({ key: '/tracking', icon: <EnvironmentOutlined />, label: 'Live Tracking' });
+    if (can('drivers.view')) items.push({ key: '/drivers', icon: <TeamOutlined />, label: t('nav.drivers') });
+    if (can('payments.view')) items.push({ key: '/payments', icon: <DollarOutlined />, label: t('nav.payments') });
 
-    items.push(
-      { key: '/match', icon: <ThunderboltOutlined />, label: 'Match' },
-      { key: '/tracking', icon: <EnvironmentOutlined />, label: 'Live Tracking' },
-      { key: '/drivers', icon: <TeamOutlined />, label: t('nav.drivers') }
-    );
+    const systemAdminChildren = [
+      can('admin.manage') && { key: '/admin-users', label: t('nav.adminUsers') || 'Admin Directory' },
+      can('access.matrix.edit') && { key: '/access-matrix', label: t('nav.accessMatrix') || 'Access Matrix' },
+      can('audit.view') && { key: '/audit-logs', label: t('nav.auditLogs') || 'Audit Logs' },
+    ].filter(Boolean);
 
-    if (isChairman || isManager) {
-      items.push({ key: '/payments', icon: <DollarOutlined />, label: t('nav.payments') });
-    }
-
-    if (isChairman || isManager) {
-      const systemAdminChildren = [
-        { key: '/admin-users', label: t('nav.adminUsers') || 'Admin Directory' },
-        { key: '/access-matrix', label: t('nav.accessMatrix') || 'Access Matrix' },
-        { key: '/audit-logs', label: t('nav.auditLogs') || 'Audit Logs' }
-      ];
-
+    if (systemAdminChildren.length > 0) {
       items.push({
         key: 'system-admin-submenu',
         icon: <SettingOutlined />,
         label: t('nav.systemAdmin') || 'Administration',
         children: systemAdminChildren,
-      } as any);
+      });
     }
 
     return items;
-  }, [t, isChairman, isManager]);
+  }, [t, can]);
 
   const handleMenuClick = (key: string) => {
     navigate(key);
@@ -403,8 +402,9 @@ export default function AppLayout() {
     </div>
   );
 
-  const roleBadgeColor = isChairman ? '#FFC20E' : isManager ? '#0B4C8C' : '#0EA5E9';
-  const roleLabel = isChairman ? 'Chairman' : isManager ? 'Manager' : 'Load Admin';
+  const isTechAdmin = user?.role === 'TECH_ADMIN';
+  const roleBadgeColor = isChairman ? '#FFC20E' : isManager ? '#0B4C8C' : isTechAdmin ? '#7C3AED' : '#0EA5E9';
+  const roleLabel = isChairman ? 'Chairman' : isManager ? 'Manager' : isTechAdmin ? 'Technical Admin' : 'Load Admin';
 
   const sidebarContent = (
     <>
@@ -626,8 +626,9 @@ export default function AppLayout() {
               <Tag
                 className={isChairman ? 'kkp-role-tag-chairman' : isManager ? 'kkp-role-tag-manager' : 'kkp-role-tag-loadadmin'}
                 bordered={false}
+                color={isTechAdmin ? 'purple' : undefined}
               >
-                {isChairman ? '👑 Chairman' : isManager ? '🛡️ Manager' : '📋 Load Admin'}
+                {isChairman ? '👑 Chairman' : isManager ? '🛡️ Manager' : isTechAdmin ? '🛠️ Technical Admin' : '📋 Load Admin'}
               </Tag>
             )}
 

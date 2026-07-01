@@ -32,9 +32,9 @@ export default function LoadPostingScreen() {
   const { addLoad } = useLoads();
   const { addNotification } = useNotifications();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { can } = useAuth();
 
-  const isChairman = user?.role === 'CHAIRMAN';
+  const isChairman = !can('loads.post');
 
   const onFinish = async (values: any) => {
     const calculatedBudget = values.priceType === 'per_ton'

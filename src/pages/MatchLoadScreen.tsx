@@ -18,9 +18,9 @@ const isActiveAssigned = (l: Load) => !!l.assignedDriver && !CLOSED.includes(l.s
 export default function MatchLoadScreen() {
   const { loadId = '' } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { can } = useAuth();
   const { loads, refresh } = useLoads();
-  const isChairman = user?.role === 'CHAIRMAN';
+  const canAssign = can('match.assign');
 
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [assignedDriverId, setAssignedDriverId] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export default function MatchLoadScreen() {
       <PageHeader
         title={`Match ${load.id}`}
         subtitle={`${raisedHands.length} driver${raisedHands.length === 1 ? '' : 's'} raised their hand`}
-        extra={!isChairman && (
+        extra={canAssign && (
           <GoldButton icon={<UserAddOutlined />} onClick={() => { setManualDriverId(undefined); setManualOpen(true); }}>
             Add driver manually
           </GoldButton>
@@ -137,7 +137,7 @@ export default function MatchLoadScreen() {
           style={{ marginBottom: 16, borderRadius: 10 }}
           message={<span className="kkp-text-dark">Currently assigned to <strong className="kkp-text-navy">{assignedLabel}</strong></span>}
           description={<span className="kkp-text-drab" style={{ fontSize: 12 }}>Pick another driver below to change, or unassign to cancel the match.</span>}
-          action={!isChairman && (
+          action={canAssign && (
             <Popconfirm title={`Unassign ${assignedLabel} from ${load.id}?`} okText="Unassign" onConfirm={handleUnassign}>
               <Button size="small" danger icon={<CloseOutlined />}>Unassign</Button>
             </Popconfirm>
@@ -148,7 +148,7 @@ export default function MatchLoadScreen() {
       {raisedHands.length === 0 ? (
         <Card className="kkp-card">
           <Empty description={loading ? 'Loading…' : 'No drivers have raised their hands for this load yet.'}>
-            {!isChairman && (
+            {canAssign && (
               <GoldButton icon={<UserAddOutlined />} onClick={() => { setManualDriverId(undefined); setManualOpen(true); }}>
                 Add driver manually
               </GoldButton>
@@ -184,7 +184,7 @@ export default function MatchLoadScreen() {
                   ) : busy ? (
                     <Tag color="gold" style={{ width: '100%', textAlign: 'center', margin: 0, padding: '4px 0', borderRadius: 8 }}>Already assigned to {busy}</Tag>
                   ) : (
-                    <GoldButton icon={isAssigned ? <SwapOutlined /> : <CheckOutlined />} style={{ width: '100%' }} disabled={isChairman} onClick={() => setConfirm(c)}>
+                    <GoldButton icon={isAssigned ? <SwapOutlined /> : <CheckOutlined />} style={{ width: '100%' }} disabled={!canAssign} onClick={() => setConfirm(c)}>
                       {isAssigned ? 'Change to this driver' : 'Assign'}
                     </GoldButton>
                   )}

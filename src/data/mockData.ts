@@ -137,9 +137,9 @@ export const recentActivity: ActivityItem[] = [
 
 // ─── Vehicle Types ───────────────────────────────────────────────────────────
 
-// Must match the driver app's onboarding vocabulary
-// (6Ways web: OnboardingWizard VEHICLE_TYPES) so a posted load's vehicleType
-// can match a driver's vehicleType on the board filter. Keep these in sync.
+// Vehicle vocabulary. When a driver app is connected later, keep these values
+// in sync with its onboarding vehicle types so a posted load's vehicleType can
+// match a driver's vehicleType on the matching board.
 export const vehicleTypes = [
   'truck',
   'mini-truck',

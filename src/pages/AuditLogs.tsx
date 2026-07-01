@@ -31,13 +31,13 @@ const mockAuditLogs: AuditLog[] = [
 ];
 
 export default function AuditLogs() {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { t } = useLanguage();
   const [searchText, setSearchText] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [adminFilter, setAdminFilter] = useState<string | null>(null);
 
-  const isSuper = user?.role === 'CHAIRMAN' || user?.role === 'MANAGER';
+  const isSuper = can('audit.all');
 
   // Distinct admins for the actor filter: from the logs + registered admin accounts.
   const adminNames = React.useMemo(() => {

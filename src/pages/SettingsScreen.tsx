@@ -12,12 +12,12 @@ const Option = Select.Option as any;
 
 export default function SettingsScreen() {
   const { t, language, setLanguage } = useLanguage();
-  const { user } = useAuth();
+  const { can } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
 
-  const isManager = user?.role === 'MANAGER';
-  const isChairman = user?.role === 'CHAIRMAN';
-  const showEnterpriseSettings = isChairman || isManager;
+  // Enterprise/system settings belong to the Technical Admin.
+  const showEnterpriseSettings = can('settings.enterprise');
+  const isChairman = false; // enterprise settings are only shown to editors now
 
   return (
     <div>
