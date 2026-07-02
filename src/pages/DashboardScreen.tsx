@@ -16,17 +16,15 @@ import {
   TeamOutlined,
   AuditOutlined,
   FundOutlined,
-  LineChartOutlined,
   SafetyCertificateOutlined,
   ReloadOutlined,
-  BarChartOutlined,
   RiseOutlined,
   FallOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip,
-  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend, Area, AreaChart
+  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
@@ -36,7 +34,6 @@ import { useAuth } from '../context/AuthContext';
 import { useLoads } from '../context/LoadsContext';
 import type { Load } from '../types';
 import {
-  revenueData,
   recentActivity,
   topRoutesByVolume,
 } from '../data/mockData';
@@ -138,6 +135,7 @@ export default function DashboardScreen() {
   const { user, can } = useAuth();
   const { loads, updatePricing } = useLoads();
   const liveActivity = useActivities();
+  const canSeeAssignedBy = user?.role === 'MANAGER' || user?.role === 'TECH_ADMIN';
 
   type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
   const [pricing, setPricing] = useState<Record<string, Draft>>({});
@@ -219,6 +217,10 @@ export default function DashboardScreen() {
       render: (_: any, l: Load) => l.assignedDriver
         ? <span className="kkp-text-dark">{l.assignedDriver}</span>
         : <span className="kkp-text-drab">—</span> },
+    ...(canSeeAssignedBy ? [{ title: 'Assigned By', key: 'assignedBy', width: 130,
+      render: (_: any, l: Load) => l.assignedByName
+        ? <span className="kkp-text-dark">{l.assignedByName}</span>
+        : <span className="kkp-text-drab">—</span> }] : []),
     { title: 'Quoted', key: 'quoted', width: 120, render: (_: any, l: Load) => {
         // Quoted shows the running total = base quote + driver's offered extra.
         // Editing it sets the base (total − offered); editing Offered bumps this up.
@@ -262,7 +264,7 @@ export default function DashboardScreen() {
   ];
   const isChairman = user?.role === 'CHAIRMAN';
   const isManager = user?.role === 'MANAGER';
-  const isLoadAdmin = user?.role === 'LOAD_ADMIN';
+  const isAgent = user?.role === 'AGENT';
   const isTechAdmin = user?.role === 'TECH_ADMIN';
   const canPricing = can('loads.pricing.edit');
   const showFinancials = can('analytics.financial');
@@ -270,7 +272,6 @@ export default function DashboardScreen() {
 
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
-  const [revenueChartType, setRevenueChartType] = useState<'bar' | 'area'>('bar');
   const [drillDownModal, setDrillDownModal] = useState<{ title: string; content: React.ReactNode } | null>(null);
 
   // Simulated live metrics with slight random variation after refresh
@@ -322,10 +323,10 @@ export default function DashboardScreen() {
       { title: 'Active Trips', numericValue: metrics.trips, displayValue: String(metrics.trips), trend: '+4% from yesterday', trendUp: true, icon: <CarOutlined />, color: '#0B4C8C', filterStatus: 'in_transit',
         drill: [{ label: 'On-Time', value: `${metrics.trips - 2}`, color: '#10B981' }, { label: 'Delayed', value: '2', color: '#F4811F' }, { label: 'Critical', value: '0', color: '#EF4444' }], visible: true },
       { title: 'Pending POD Reviews', numericValue: metrics.pod, displayValue: String(metrics.pod), trend: '+3 from yesterday', trendUp: false, icon: <AuditOutlined />, color: '#0B4C8C', filterStatus: 'delivered',
-        drill: [{ label: 'Under Review', value: String(metrics.pod), color: '#0B4C8C' }, { label: 'Cleared Today', value: '7', color: '#10B981' }], visible: !isLoadAdmin && !isTechAdmin },
+        drill: [{ label: 'Under Review', value: String(metrics.pod), color: '#0B4C8C' }, { label: 'Cleared Today', value: '7', color: '#10B981' }], visible: !isAgent && !isTechAdmin },
     ];
     return list.filter(c => c.visible);
-  }, [metrics, isLoadAdmin, isTechAdmin]);
+  }, [metrics, isAgent, isTechAdmin]);
 
   // Live in-app events first (posting/cancelling loads, …), then seed activity.
   const timelineItems = useMemo(() => {
@@ -440,7 +441,7 @@ export default function DashboardScreen() {
         <Space>
           <Badge status="processing" color={isSystemAdmin ? '#FFC20E' : '#0B4C8C'} text={<Text style={{ fontSize: 11, color: '#667085' }}>Auto-refreshing every 60s</Text>} />
           <Tag color={isChairman ? 'gold' : isManager ? 'blue' : isTechAdmin ? 'purple' : 'cyan'} style={{ fontWeight: 700 }}>
-            {isChairman ? '👑 CHAIRMAN MODE' : isManager ? '🛡️ MANAGER MODE' : isTechAdmin ? '🛠️ TECHNICAL ADMIN' : '📋 LOAD ADMIN MODE'}
+            {isChairman ? '👑 CHAIRMAN MODE' : isManager ? '🛡️ MANAGER MODE' : isTechAdmin ? '🛠️ TECHNICAL ADMIN' : '📋 AGENT MODE'}
           </Tag>
         </Space>
       </div>
@@ -597,54 +598,8 @@ export default function DashboardScreen() {
           </Card>
         </Col>
 
-        {/* Revenue Bar / Area Chart */}
-        {showFinancials && (
-          <Col xs={24} lg={12}>
-            <Card
-              title={<span className="kkp-text-navy kkp-font-manrope kkp-weight-700">Revenue & Commission Trend</span>}
-              className="kkp-card"
-              styles={{ body: { padding: '16px' } }}
-              extra={
-                <Space size={4}>
-                  <Button size="small" icon={<BarChartOutlined />} type={revenueChartType === 'bar' ? 'primary' : 'default'} onClick={() => setRevenueChartType('bar')} style={{ borderRadius: 6, fontSize: 11 }}>Bar</Button>
-                  <Button size="small" icon={<LineChartOutlined />} type={revenueChartType === 'area' ? 'primary' : 'default'} onClick={() => setRevenueChartType('area')} style={{ borderRadius: 6, fontSize: 11 }}>Area</Button>
-                </Space>
-              }
-            >
-              <div style={{ height: 280 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  {revenueChartType === 'area' ? (
-                    <AreaChart data={revenueData} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0B4C8C" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#0B4C8C" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2F4F7" />
-                      <XAxis dataKey="month" tick={{ fill: '#667085', fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fill: '#667085', fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
-                      <ChartTooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']} contentStyle={{ borderRadius: 8 }} />
-                      <Area type="monotone" dataKey="revenue" stroke="#0B4C8C" strokeWidth={2.5} fill="url(#revGrad)" animationDuration={700} />
-                    </AreaChart>
-                  ) : (
-                    <BarChart data={revenueData} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F2F4F7" />
-                      <XAxis dataKey="month" tick={{ fill: '#667085', fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fill: '#667085', fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
-                      <ChartTooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Revenue']} contentStyle={{ borderRadius: 8 }} />
-                      <Legend verticalAlign="top" height={36} iconType="circle" />
-                      <Bar dataKey="revenue" name="Total Revenue" fill="#0B4C8C" radius={[4, 4, 0, 0]} animationDuration={700} />
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          </Col>
-        )}
-
         {/* Top Routes Bar */}
-        <Col xs={24} lg={showFinancials ? 12 : 24}>
+        <Col xs={24} lg={12}>
           <Card
             title={<span className="kkp-text-navy kkp-font-manrope kkp-weight-700">Top Routes by Volume</span>}
             className="kkp-card"

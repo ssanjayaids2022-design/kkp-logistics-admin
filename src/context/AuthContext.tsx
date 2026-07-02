@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import type { User, Role, Permission, RolePermissions } from '../types';
-import { loadRolePermissions, saveRolePermissions, RBAC_STORAGE_KEY } from '../auth/permissions';
+import { loadRolePermissions, saveRolePermissions, RBAC_STORAGE_KEY, ALL_PERMISSIONS } from '../auth/permissions';
 
 export interface PasswordResetRequest {
   id: string;
@@ -34,9 +34,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const DEFAULT_USERS = [
   { username: 'chairman', password: 'chair123', data: { id: 'USR-002', name: 'Chairman (CEO)', email: 'chairman@kkptransports.com', role: 'CHAIRMAN' as const, scope: 'National (Full Access)', status: 'Active' } },
   { username: 'manager', password: 'mgr123', data: { id: 'USR-001', name: 'General Manager', email: 'manager@kkptransports.com', role: 'MANAGER' as const, scope: 'National (Full Access)', status: 'Active' } },
-  { username: 'loadadmin', password: 'load123', data: { id: 'USR-003', name: 'Load Dispatcher', email: 'loadadmin@kkptransports.com', role: 'LOAD_ADMIN' as const, scope: 'South Region (Chennai/Cbe)', status: 'Active' } },
+  { username: 'loadadmin', password: 'load123', data: { id: 'USR-003', name: 'Load Dispatcher', email: 'loadadmin@kkptransports.com', role: 'AGENT' as const, scope: 'South Region (Chennai/Cbe)', status: 'Active' } },
   { username: 'karthik', password: 'admin123', data: { id: 'USR-004', name: 'Karthik Raja', email: 'karthik.r@kkptransports.com', role: 'MANAGER' as const, scope: 'Tamil Nadu Operations', status: 'Active' } },
-  { username: 'priya', password: 'admin123', data: { id: 'USR-005', name: 'Priya Sharma', email: 'priya.s@kkptransports.com', role: 'LOAD_ADMIN' as const, scope: 'North Region (Delhi)', status: 'Suspended' } },
+  { username: 'priya', password: 'admin123', data: { id: 'USR-005', name: 'Priya Sharma', email: 'priya.s@kkptransports.com', role: 'AGENT' as const, scope: 'North Region (Delhi)', status: 'Active' } },
   { username: 'techadmin', password: 'tech123', data: { id: 'USR-006', name: 'Technical Admin', email: 'techadmin@kkptransports.com', role: 'TECH_ADMIN' as const, scope: 'System', status: 'Active' } },
 ];
 
@@ -68,7 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [rolePermissions, setRolePermissions] = useState<RolePermissions>(() => loadRolePermissions());
 
   const permissions = useMemo(
-    () => new Set<Permission>(user ? (rolePermissions[user.role] || []) : []),
+    () => new Set<Permission>(
+      !user ? [] : user.role === 'TECH_ADMIN' ? ALL_PERMISSIONS : (rolePermissions[user.role] || []),
+    ),
     [user, rolePermissions],
   );
   const can = useCallback((perm: Permission) => permissions.has(perm), [permissions]);

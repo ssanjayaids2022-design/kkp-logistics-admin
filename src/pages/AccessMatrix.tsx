@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card as AntdCard, Table, Switch, Button, Typography, Space, message, Tag, Alert } from 'antd';
+import { Card as AntdCard, Table, Switch, Button, Typography, Space, message, Tag, Alert, List, Avatar, Row, Col } from 'antd';
 const Card = AntdCard as any;
-import { SafetyCertificateOutlined, SaveOutlined, ReloadOutlined, LockOutlined } from '@ant-design/icons';
+import { SafetyCertificateOutlined, SaveOutlined, ReloadOutlined, LockOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { useAuth } from '../context/AuthContext';
 import type { Permission, Role, RolePermissions } from '../types';
@@ -9,23 +10,44 @@ import { ROLES, ROLE_LABELS, PERMISSION_META, DEFAULT_ROLE_PERMISSIONS } from '.
 
 const { Text } = Typography;
 
-// Chairman & Manager permissions are fixed — a Technical Admin may not alter
-// them (they can only tune Load Admin, and their own row minus the matrix key).
-const LOCKED_ROLES: Role[] = ['CHAIRMAN', 'MANAGER'];
-const isLockedCell = (role: Role, perm: Permission) =>
-  LOCKED_ROLES.includes(role) || (role === 'TECH_ADMIN' && perm === 'access.matrix.edit');
-
 const clone = (rp: RolePermissions): RolePermissions => ({
-  CHAIRMAN: [...rp.CHAIRMAN], MANAGER: [...rp.MANAGER], LOAD_ADMIN: [...rp.LOAD_ADMIN], TECH_ADMIN: [...rp.TECH_ADMIN],
+  CHAIRMAN: [...rp.CHAIRMAN], MANAGER: [...rp.MANAGER], AGENT: [...rp.AGENT], TECH_ADMIN: [...rp.TECH_ADMIN],
 });
 
+// Who governs each role's column, and the caption shown under the header.
+const CONTROLLER: Record<Role, string> = {
+  CHAIRMAN: 'by Technical Admin',
+  MANAGER: 'by Technical Admin',
+  TECH_ADMIN: 'superior — full access',
+  AGENT: 'by Manager',
+};
+
+interface Account { id: string; name: string; role: Role; scope?: string; status?: string; }
+const readAccounts = (): Account[] => {
+  try {
+    return (JSON.parse(localStorage.getItem('kkp_users') || '[]') as any[])
+      .map(u => ({ id: u?.data?.id, name: u?.data?.name, role: u?.data?.role, scope: u?.data?.scope, status: u?.data?.status }))
+      .filter(a => a.id && a.role);
+  } catch { return []; }
+};
+
 export default function AccessMatrix() {
-  const { can, rolePermissions, updateRolePermissions } = useAuth();
-  const editable = can('access.matrix.edit');
+  const { can, user, rolePermissions, updateRolePermissions } = useAuth();
+  const navigate = useNavigate();
+  const myRole = user?.role;
+
+  // Technical Admin is superior: governs Chairman/Manager/Agent columns (its own
+  // column is fixed at full access). Manager governs the Agent column.
+  const canEditColumn = (role: Role): boolean => {
+    if (role === 'TECH_ADMIN') return false;               // superior column is fixed (full access)
+    if (myRole === 'TECH_ADMIN') return true;              // superior edits everyone else
+    if (myRole === 'MANAGER') return role === 'AGENT'; // manager governs Agents
+    return false;
+  };
+  const editable = can('access.matrix.edit') && ROLES.some(r => canEditColumn(r));
 
   const [draft, setDraft] = useState<RolePermissions>(() => clone(rolePermissions));
-
-  // Re-sync when the saved matrix changes (e.g. another tab, or after save).
+  const [accounts] = useState<Account[]>(readAccounts);
   useEffect(() => { setDraft(clone(rolePermissions)); }, [rolePermissions]);
 
   const hasPerm = (role: Role, perm: Permission) => draft[role].includes(perm);
@@ -37,8 +59,10 @@ export default function AccessMatrix() {
   );
 
   const toggle = (role: Role, perm: Permission, checked: boolean) => {
-    if (!editable) { message.error('Only a Technical Admin can change the access matrix.'); return; }
-    if (isLockedCell(role, perm)) { message.warning('Technical Admin must keep access-matrix control.'); return; }
+    if (!canEditColumn(role)) {
+      message.warning(role === 'TECH_ADMIN' ? 'Technical Admin is the superior role — always full access.' : 'You cannot change this column.');
+      return;
+    }
     setDraft(prev => {
       const cur = prev[role];
       const next = checked ? (cur.includes(perm) ? cur : [...cur, perm]) : cur.filter(p => p !== perm);
@@ -52,13 +76,12 @@ export default function AccessMatrix() {
   };
 
   const handleReset = () => {
-    // Reset the editable roles to defaults; keep Chairman & Manager as-is (locked).
-    setDraft(prev => ({
-      ...clone(DEFAULT_ROLE_PERMISSIONS),
-      CHAIRMAN: [...prev.CHAIRMAN],
-      MANAGER: [...prev.MANAGER],
-    }));
-    message.info('Load Admin & Technical Admin reverted to defaults (not yet saved).');
+    setDraft(prev => {
+      const next = clone(prev);
+      ROLES.forEach(r => { if (canEditColumn(r)) next[r] = [...DEFAULT_ROLE_PERMISSIONS[r]]; });
+      return next;
+    });
+    message.info('Editable columns reverted to defaults (not yet saved).');
   };
 
   const columns = [
@@ -75,16 +98,23 @@ export default function AccessMatrix() {
       ),
     },
     ...ROLES.map((role) => ({
-      title: <Tag color={role === 'TECH_ADMIN' ? 'purple' : role === 'CHAIRMAN' ? 'gold' : role === 'MANAGER' ? 'blue' : 'cyan'}>{ROLE_LABELS[role]}</Tag>,
+      title: (
+        <div style={{ textAlign: 'center' }}>
+          <Tag color={role === 'TECH_ADMIN' ? 'purple' : role === 'CHAIRMAN' ? 'gold' : role === 'MANAGER' ? 'blue' : 'cyan'} style={{ margin: 0 }}>{ROLE_LABELS[role]}</Tag>
+          <div style={{ fontSize: 9, color: '#98A2B3', marginTop: 2 }}>{CONTROLLER[role]}</div>
+        </div>
+      ),
       key: role,
       align: 'center' as const,
       width: 130,
       render: (_: any, m: typeof PERMISSION_META[number]) => {
-        const locked = isLockedCell(role, m.key);
+        const locked = !canEditColumn(role);
+        // Technical Admin (superior) always has every capability.
+        const checked = role === 'TECH_ADMIN' ? true : hasPerm(role, m.key);
         return (
           <Switch
-            checked={hasPerm(role, m.key)}
-            disabled={!editable || locked}
+            checked={checked}
+            disabled={locked}
             onChange={(val) => toggle(role, m.key, val)}
             checkedChildren={locked ? <LockOutlined /> : 'ON'}
             unCheckedChildren="OFF"
@@ -94,20 +124,54 @@ export default function AccessMatrix() {
     })),
   ];
 
+  const techAdmins = accounts.filter(a => a.role === 'TECH_ADMIN');
+  const agents = accounts.filter(a => a.role === 'AGENT');
+
+  const accountList = (title: string, controller: string, list: Account[], color: string) => (
+    <Card className="kkp-card" title={<Space><TeamOutlined style={{ color }} /><span className="kkp-text-navy kkp-weight-700">{title} ({list.length})</span><Text type="secondary" style={{ fontSize: 12 }}>— {controller}</Text></Space>}>
+      <List
+        dataSource={list}
+        locale={{ emptyText: `No ${title.toLowerCase()} yet.` }}
+        renderItem={(a) => (
+          <List.Item>
+            <List.Item.Meta
+              avatar={<Avatar style={{ background: color, color: '#fff', fontWeight: 700 }}>{a.name?.charAt(0)}</Avatar>}
+              title={<span className="kkp-text-dark kkp-weight-600">{a.name} <Text code style={{ fontSize: 11 }}>{a.id}</Text></span>}
+              description={<Text type="secondary" style={{ fontSize: 12 }}>{a.scope || '—'} · {a.status || 'Active'}</Text>}
+            />
+          </List.Item>
+        )}
+      />
+    </Card>
+  );
+
   return (
     <div>
       <PageHeader
         title="Access Control Matrix"
-        subtitle="Tune Load Admin (and Technical Admin) permissions — Chairman & Manager are fixed"
-        extra={editable && (
-          <Space>
-            <Button icon={<ReloadOutlined />} onClick={handleReset}>Reset defaults</Button>
-            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} disabled={!dirty}
-              style={{ background: '#F4811F', border: 'none' }}>
-              Save matrix
-            </Button>
+        extra={
+          <Space wrap>
+            {(myRole === 'MANAGER' || myRole === 'TECH_ADMIN') && (
+              <Button icon={<UserAddOutlined />} onClick={() => navigate('/admin-users', { state: { createRole: 'AGENT' } })}>
+                Create Agent
+              </Button>
+            )}
+            {myRole === 'TECH_ADMIN' && (
+              <Button icon={<UserAddOutlined />} onClick={() => navigate('/admin-users', { state: { createRole: 'MANAGER' } })}>
+                Create Manager
+              </Button>
+            )}
+            {editable && (
+              <>
+                <Button icon={<ReloadOutlined />} onClick={handleReset}>Reset defaults</Button>
+                <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} disabled={!dirty}
+                  style={{ background: '#F4811F', border: 'none' }}>
+                  Save matrix
+                </Button>
+              </>
+            )}
           </Space>
-        )}
+        }
       />
 
       {!editable && (
@@ -116,13 +180,14 @@ export default function AccessMatrix() {
           showIcon
           icon={<LockOutlined />}
           message="Read-only"
-          description="Only a Technical Admin can edit the access matrix. You can review the current permissions below."
+          description="You can review the current permissions below, but only a Manager (Technical Admins) or a Technical Admin (Agents) can edit them."
           style={{ marginBottom: 20, borderRadius: 8 }}
         />
       )}
 
       <Card
         className="kkp-card"
+        style={{ marginBottom: 20 }}
         title={
           <Space>
             <SafetyCertificateOutlined style={{ color: '#0B4C8C', fontSize: 18 }} />
@@ -139,6 +204,11 @@ export default function AccessMatrix() {
           rowClassName={(_, i) => (i % 2 ? 'kkp-row-alt' : '')}
         />
       </Card>
+
+      <Row gutter={[20, 20]}>
+        <Col xs={24} lg={12}>{accountList('Technical Admins', '(superior — full access)', techAdmins, '#7C3AED')}</Col>
+        <Col xs={24} lg={12}>{accountList('Agents', 'by Manager', agents, '#0EA5E9')}</Col>
+      </Row>
     </div>
   );
 }

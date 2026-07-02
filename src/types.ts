@@ -20,6 +20,9 @@ export interface Load {
   bidsCount: number;
   postedDate: string;
   assignedDriver?: string;
+  assignedById?: string;    // which admin/agent assigned the driver
+  assignedByName?: string;
+  assignedAt?: string;
   notes?: string;
   handling?: string;       // fragile / special handling instruction
   truckLength?: string;    // required truck body length (feet)
@@ -94,7 +97,7 @@ export interface Payment {
   notes?: string;
 }
 
-export type Role = 'CHAIRMAN' | 'MANAGER' | 'LOAD_ADMIN' | 'TECH_ADMIN';
+export type Role = 'CHAIRMAN' | 'MANAGER' | 'AGENT' | 'TECH_ADMIN';
 
 // Canonical capability keys — the single source of truth the Access Matrix drives.
 export type Permission =

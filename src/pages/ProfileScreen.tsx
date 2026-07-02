@@ -72,7 +72,7 @@ export default function ProfileScreen() {
               {user?.name || 'Admin User'}
             </Title>
             <Text style={{ color: '#667085', fontSize: 16 }}>
-              {user?.role === 'CHAIRMAN' ? '👑 Chairman (CEO)' : user?.role === 'MANAGER' ? '🛡️ General Manager' : user?.role === 'TECH_ADMIN' ? '🛠️ Technical Admin' : '📋 Load Dispatch Administrator'}
+              {user?.role === 'CHAIRMAN' ? '👑 Chairman (CEO)' : user?.role === 'MANAGER' ? '🛡️ General Manager' : user?.role === 'TECH_ADMIN' ? '🛠️ Technical Admin' : '📋 Agent (Load Dispatch)'}
             </Text>
           </Col>
           <Col>

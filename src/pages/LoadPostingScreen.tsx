@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Input, Select, DatePicker, InputNumber, Card as AntdCard, Row, Col, message, Radio } from 'antd';
+import { Form, Input, Select, DatePicker, InputNumber, Card as AntdCard, Row, Col, message, Radio, AutoComplete } from 'antd';
 const Card = AntdCard as any;
 import { EnvironmentOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -169,16 +169,19 @@ export default function LoadPostingScreen() {
                 }
                 rules={[{ required: true, message: t('postLoad.selectSource') }]}
               >
-                <Select
-                  showSearch
-                  placeholder={t('postLoad.selectSource')}
+                <AutoComplete
                   options={cityOptions}
-                  suffixIcon={<EnvironmentOutlined style={{ color: '#0B4C8C' }} />}
                   filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    String(option?.value ?? '').toLowerCase().includes(input.toLowerCase())
                   }
-                  style={{ borderRadius: 8 }}
-                />
+                  style={{ width: '100%' }}
+                >
+                  <Input
+                    placeholder="Type an address or pick a city"
+                    suffix={<EnvironmentOutlined style={{ color: '#0B4C8C' }} />}
+                    style={{ borderRadius: 8 }}
+                  />
+                </AutoComplete>
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -202,16 +205,19 @@ export default function LoadPostingScreen() {
                 }
                 rules={[{ required: true, message: t('postLoad.selectDest') }]}
               >
-                <Select
-                  showSearch
-                  placeholder={t('postLoad.selectDest')}
+                <AutoComplete
                   options={cityOptions}
-                  suffixIcon={<EnvironmentOutlined style={{ color: '#0B4C8C' }} />}
                   filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    String(option?.value ?? '').toLowerCase().includes(input.toLowerCase())
                   }
-                  style={{ borderRadius: 8 }}
-                />
+                  style={{ width: '100%' }}
+                >
+                  <Input
+                    placeholder="Type an address or pick a city"
+                    suffix={<EnvironmentOutlined style={{ color: '#0B4C8C' }} />}
+                    style={{ borderRadius: 8 }}
+                  />
+                </AutoComplete>
               </Form.Item>
             </Col>
           </Row>
@@ -232,22 +238,6 @@ export default function LoadPostingScreen() {
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                name="vehicleType"
-                label={<span className="kkp-text-muted kkp-weight-600">{t('postLoad.vehicleType')}</span>}
-                rules={[{ required: true, message: t('postLoad.selectVehicle') }]}
-              >
-                <Select 
-                  placeholder={t('postLoad.selectVehicle')} 
-                  className="kkp-btn-rounded"
-                  options={vehicleTypes.map(v => ({ value: v, label: v }))} 
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={20}>
-            <Col xs={24} md={12}>
-              <Form.Item
                 name="weight"
                 label={<span className="kkp-text-muted kkp-weight-600">{t('postLoad.weight')}</span>}
                 rules={[{ required: true, message: t('postLoad.weight') || 'Please input weight' }]}
@@ -262,20 +252,64 @@ export default function LoadPostingScreen() {
                 />
               </Form.Item>
             </Col>
+          </Row>
+
+          <Row gutter={20}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="vehicleType"
+                label={<span className="kkp-text-muted kkp-weight-600">{t('postLoad.vehicleType')}</span>}
+                rules={[{ required: true, message: t('postLoad.selectVehicle') }]}
+              >
+                <Select
+                  placeholder={t('postLoad.selectVehicle')}
+                  className="kkp-btn-rounded"
+                  options={vehicleTypes.map(v => ({ value: v, label: v }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="truckLength"
+                label={<span className="kkp-text-muted kkp-weight-600">Truck Length (ft)</span>}
+              >
+                <Select
+                  placeholder="Select truck length"
+                  options={TRUCK_LENGTHS.map(o => ({ value: o, label: o }))}
+                  style={{ borderRadius: 8 }}
+                  allowClear
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={20}>
             <Col xs={24} md={12}>
               <Form.Item
                 name="priceType"
                 label={<span className="kkp-text-muted kkp-weight-600">Price Option</span>}
                 initialValue="fixed"
               >
-                <Radio.Group 
-                  optionType="button" 
-                  buttonStyle="solid" 
+                <Radio.Group
+                  optionType="button"
+                  buttonStyle="solid"
                   style={{ width: '100%' }}
                 >
                   <Radio.Button value="fixed" style={{ width: '50%', textAlign: 'center' }}>Fixed Price</Radio.Button>
                   <Radio.Button value="per_ton" style={{ width: '50%', textAlign: 'center' }}>Price per Ton</Radio.Button>
                 </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="handling"
+                label={<span className="kkp-text-muted kkp-weight-600">Handling / Fragile Instructions</span>}
+                initialValue={HANDLING_OPTIONS[0]}
+              >
+                <Select
+                  options={HANDLING_OPTIONS.map(o => ({ value: o, label: o }))}
+                  style={{ borderRadius: 8 }}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -363,34 +397,6 @@ export default function LoadPostingScreen() {
               }
             }}
           </Form.Item>
-
-          <Row gutter={20}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="handling"
-                label={<span className="kkp-text-muted kkp-weight-600">Handling / Fragile Instructions</span>}
-                initialValue={HANDLING_OPTIONS[0]}
-              >
-                <Select
-                  options={HANDLING_OPTIONS.map(o => ({ value: o, label: o }))}
-                  style={{ borderRadius: 8 }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="truckLength"
-                label={<span className="kkp-text-muted kkp-weight-600">Truck Length (ft)</span>}
-              >
-                <Select
-                  placeholder="Select truck length"
-                  options={TRUCK_LENGTHS.map(o => ({ value: o, label: o }))}
-                  style={{ borderRadius: 8 }}
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-          </Row>
 
           <Form.Item
             name="notes"

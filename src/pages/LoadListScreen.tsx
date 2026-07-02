@@ -42,9 +42,10 @@ export default function LoadListScreen() {
   const location = useLocation();
   const { loads, cancelLoad, loading, error, refresh, updatePricing } = useLoads();
   const { t } = useLanguage();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
 
   const canPricing = can('loads.pricing.edit');
+  const canSeeAssignedBy = user?.role === 'MANAGER' || user?.role === 'TECH_ADMIN';
 
   // ── Pricing worksheet (mirrors the dashboard Loads Ledger) ──
   type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
@@ -182,6 +183,14 @@ export default function LoadListScreen() {
         </Tag>
       ),
     },
+    ...(canSeeAssignedBy ? [{
+      title: 'Assigned By',
+      key: 'assignedBy',
+      width: 140,
+      render: (_: any, record: Load) => record.assignedByName
+        ? <span className="kkp-text-dark">{record.assignedByName}</span>
+        : <span className="kkp-text-drab">—</span>,
+    }] : []),
     {
       title: t('loads.weight'),
       dataIndex: 'weight',

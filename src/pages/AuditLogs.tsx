@@ -25,10 +25,10 @@ const roleTag = (role: Role) => {
   const map: Record<Role, { color: string; label: string }> = {
     CHAIRMAN: { color: 'gold', label: '👑 CHAIRMAN' },
     MANAGER: { color: 'blue', label: '🛡️ MANAGER' },
-    LOAD_ADMIN: { color: 'cyan', label: '📋 LOAD ADMIN' },
+    AGENT: { color: 'cyan', label: '📋 AGENT' },
     TECH_ADMIN: { color: 'purple', label: '🛠️ TECH ADMIN' },
   };
-  return map[role] || map.LOAD_ADMIN;
+  return map[role] || map.AGENT;
 };
 
 const mockAuditLogs: AuditLog[] = [

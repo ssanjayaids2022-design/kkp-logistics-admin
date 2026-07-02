@@ -1,11 +1,11 @@
 import type { Permission, Role, RolePermissions } from '../types';
 
-export const ROLES: Role[] = ['CHAIRMAN', 'MANAGER', 'LOAD_ADMIN', 'TECH_ADMIN'];
+export const ROLES: Role[] = ['CHAIRMAN', 'MANAGER', 'AGENT', 'TECH_ADMIN'];
 
 export const ROLE_LABELS: Record<Role, string> = {
   CHAIRMAN: 'Chairman',
   MANAGER: 'Manager',
-  LOAD_ADMIN: 'Load Admin',
+  AGENT: 'Agent',
   TECH_ADMIN: 'Technical Admin',
 };
 
@@ -47,7 +47,10 @@ export const PERMISSION_META: PermissionMeta[] = [
 
 export const PERMISSION_GROUPS = ['Overview', 'Operations', 'Drivers', 'Finance', 'Analytics', 'System'];
 
-// Default seed — the starting point a Technical Admin can edit.
+// Every capability — the Technical Admin (superior role) always holds all of these.
+export const ALL_PERMISSIONS: Permission[] = PERMISSION_META.map(m => m.key);
+
+// Default seed — the starting point.
 export const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
   CHAIRMAN: [
     'dashboard.view', 'loads.view', 'match.view', 'tracking.view', 'drivers.view',
@@ -57,17 +60,15 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
     'dashboard.view', 'loads.view', 'loads.post', 'loads.pricing.edit', 'loads.delete',
     'match.view', 'match.assign', 'tracking.view', 'drivers.view', 'drivers.approve',
     'payments.view', 'payments.edit', 'analytics.operational', 'analytics.financial',
-    'audit.view', 'audit.all',
+    'audit.view', 'audit.all', 'admin.manage', 'access.matrix.edit', 'users.password.reset',
   ],
-  LOAD_ADMIN: [
+  AGENT: [
     'dashboard.view', 'loads.view', 'loads.post', 'loads.pricing.edit',
     'match.view', 'match.assign', 'tracking.view', 'drivers.view',
     'analytics.operational', 'audit.view',
   ],
-  TECH_ADMIN: [
-    'dashboard.view', 'audit.view', 'audit.all', 'admin.manage',
-    'access.matrix.edit', 'users.password.reset', 'settings.enterprise',
-  ],
+  // Superior role — full access to every workflow.
+  TECH_ADMIN: PERMISSION_META.map(m => m.key),
 };
 
 const STORAGE_KEY = 'kkp_rbac';
@@ -82,7 +83,7 @@ export function loadRolePermissions(): RolePermissions {
     return {
       CHAIRMAN: parsed.CHAIRMAN ?? DEFAULT_ROLE_PERMISSIONS.CHAIRMAN,
       MANAGER: parsed.MANAGER ?? DEFAULT_ROLE_PERMISSIONS.MANAGER,
-      LOAD_ADMIN: parsed.LOAD_ADMIN ?? DEFAULT_ROLE_PERMISSIONS.LOAD_ADMIN,
+      AGENT: parsed.AGENT ?? DEFAULT_ROLE_PERMISSIONS.AGENT,
       TECH_ADMIN: parsed.TECH_ADMIN ?? DEFAULT_ROLE_PERMISSIONS.TECH_ADMIN,
     };
   } catch {

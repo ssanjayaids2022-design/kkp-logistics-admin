@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card as AntdCard, Table, Button, Tag, Space, Avatar, Input, Modal, Form, Select, message, Tooltip, Typography } from 'antd';
 const Card = AntdCard as any;
 import { UserAddOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, DeleteOutlined, SearchOutlined, SafetyCertificateOutlined, KeyOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { useLocation } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { useAuth, type PasswordResetRequest } from '../context/AuthContext';
 import type { Role } from '../types';
@@ -39,8 +40,22 @@ const fmtLogin = (iso?: string) => {
 };
 
 export default function AdminManagement() {
-  const { changePassword, can } = useAuth();
+  const { changePassword, can, user } = useAuth();
   const canManage = can('admin.manage');
+  const isTechAdmin = user?.role === 'TECH_ADMIN';
+
+  // Technical Admin is the superior role: creates every account type (incl. Chairman).
+  // Manager creates Agents only.
+  const roleOptions = isTechAdmin
+    ? [
+        { value: 'AGENT', label: 'Agent (Field ops)' },
+        { value: 'MANAGER', label: 'Manager (Operations)' },
+        { value: 'CHAIRMAN', label: 'Chairman (Oversight)' },
+        { value: 'TECH_ADMIN', label: 'Technical Admin (Superior)' },
+      ]
+    : [{ value: 'AGENT', label: 'Agent (Field ops)' }];
+  // Technical Admin manages all accounts; Manager only Agent accounts.
+  const canActOn = (role: Role) => (isTechAdmin ? true : role === 'AGENT');
 
   const readAdmins = () => mapUsers(JSON.parse(localStorage.getItem('kkp_users') || '[]'));
   const readRequests = (): PasswordResetRequest[] =>
@@ -67,6 +82,20 @@ export default function AdminManagement() {
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // Deep-link from the Access Matrix "Create Agent / Manager" buttons.
+  const location = useLocation();
+  useEffect(() => {
+    const createRole = (location.state as any)?.createRole as Role | undefined;
+    if (createRole && canManage && roleOptions.some(o => o.value === createRole)) {
+      setEditingKey(null);
+      form.resetFields();
+      form.setFieldsValue({ role: createRole, scope: 'South Region (Chennai/Cbe)', password: 'admin123' });
+      setIsModalOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openChangePassword = (record: AdminAccount) => {
@@ -117,7 +146,7 @@ export default function AdminManagement() {
       setEditingKey(null);
       form.resetFields();
       form.setFieldsValue({
-        role: 'LOAD_ADMIN',
+        role: 'AGENT',
         scope: 'South Region (Chennai/Cbe)',
         password: 'admin123',
       });
@@ -278,7 +307,7 @@ export default function AdminManagement() {
       key: 'role',
       render: (role: string) => (
         <Tag color={role === 'CHAIRMAN' ? 'gold' : role === 'MANAGER' ? 'blue' : role === 'TECH_ADMIN' ? 'purple' : 'cyan'} style={{ fontWeight: 700 }}>
-          {role === 'CHAIRMAN' ? '👑 CHAIRMAN' : role === 'MANAGER' ? '🛡️ MANAGER' : role === 'TECH_ADMIN' ? '🛠️ TECH ADMIN' : '📋 LOAD ADMIN'}
+          {role === 'CHAIRMAN' ? '👑 CHAIRMAN' : role === 'MANAGER' ? '🛡️ MANAGER' : role === 'TECH_ADMIN' ? '🛠️ TECH ADMIN' : '📋 AGENT'}
         </Tag>
       ),
     },
@@ -310,6 +339,9 @@ export default function AdminManagement() {
       title: 'Actions',
       key: 'actions',
       render: (_, record: AdminAccount) => (
+        !canActOn(record.role) ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>—</Text>
+        ) : (
         <Space size={12}>
           <Tooltip title="Edit Scope & Details">
             <Button
@@ -340,6 +372,7 @@ export default function AdminManagement() {
             />
           </Tooltip>
         </Space>
+        )
       ),
     },
   ];
@@ -463,16 +496,9 @@ export default function AdminManagement() {
             name="role"
             label="System Role Permissions"
             rules={[{ required: true }]}
-            initialValue="LOAD_ADMIN"
+            initialValue="AGENT"
           >
-            <Select
-              options={[
-                { value: 'LOAD_ADMIN', label: 'Load Admin (Field ops)' },
-                { value: 'MANAGER', label: 'Manager (Operations)' },
-                { value: 'CHAIRMAN', label: 'Chairman (Oversight)' },
-                { value: 'TECH_ADMIN', label: 'Technical Admin (Access & system)' },
-              ]}
-            />
+            <Select options={roleOptions} />
           </Form.Item>
 
           <Form.Item

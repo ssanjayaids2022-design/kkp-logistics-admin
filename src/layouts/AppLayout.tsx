@@ -410,7 +410,7 @@ export default function AppLayout() {
 
   const isTechAdmin = user?.role === 'TECH_ADMIN';
   const roleBadgeColor = isChairman ? '#FFC20E' : isManager ? '#0B4C8C' : isTechAdmin ? '#7C3AED' : '#0EA5E9';
-  const roleLabel = isChairman ? 'Chairman' : isManager ? 'Manager' : isTechAdmin ? 'Technical Admin' : 'Load Admin';
+  const roleLabel = isChairman ? 'Chairman' : isManager ? 'Manager' : isTechAdmin ? 'Technical Admin' : 'Agent';
 
   const sidebarContent = (
     <>
@@ -634,7 +634,7 @@ export default function AppLayout() {
                 bordered={false}
                 color={isTechAdmin ? 'purple' : undefined}
               >
-                {isChairman ? '👑 Chairman' : isManager ? '🛡️ Manager' : isTechAdmin ? '🛠️ Technical Admin' : '📋 Load Admin'}
+                {isChairman ? '👑 Chairman' : isManager ? '🛡️ Manager' : isTechAdmin ? '🛠️ Technical Admin' : '📋 Agent'}
               </Tag>
             )}
 
