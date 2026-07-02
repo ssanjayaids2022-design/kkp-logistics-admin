@@ -1,9 +1,12 @@
-// ─── IN-MEMORY SAMPLE-DATA BACKEND ───────────────────────────────────────────
-// Powers the entire admin dashboard with no server, so `npm run dev` works
+// ─── SHARED SAMPLE-DATA BACKEND ───────────────────────────────────────────────
+// Powers the entire admin dashboard with no real server, so `npm run dev` works
 // out of the box. Every apiService call resolves here.
 //
-// State lives in module-level arrays, so changes persist for the browser
-// session (until refresh) — long enough to walk through a full flow.
+// State is kept in module-level arrays AND mirrored to a shared store
+// (syncStore) so changes made by one agent show up for another agent — even in
+// a DIFFERENT browser (Edge ↔ Chrome). That cross-browser sync requires the
+// sync server: run `npm run dev:sync` (or `node sync-server.js`) alongside Vite.
+// When the server is offline it degrades to localStorage (same browser only).
 //
 // To connect a real backend later, implement the same methods against your API
 // and export that object as `apiService` in apiService.ts.
@@ -11,28 +14,65 @@
 import type { Load, Driver, Bid } from '../types';
 import { loads as seedLoads, drivers as seedDrivers, bids as seedBids } from '../data/mockData';
 import type { CreateLoadInput, CreateDriverInput, CandidatesResult, LoadPricingPatch } from './apiService';
+import { fetchDoc, saveDoc } from './syncStore';
 
-// Mutable working copies (deep-ish) so mutations survive the 8s polling refresh.
+// Local working cache, seeded from mock data. Kept in sync with the shared store.
 let loads: Load[] = seedLoads.map(l => ({ ...l }));
 let drivers: Driver[] = seedDrivers.map(d => ({ ...d, documentsStatus: { ...d.documentsStatus } }));
 const bids: Bid[] = seedBids.map(b => ({ ...b }));
 
-let loadSeq = 1000 + loads.length;
-let driverSeq = drivers.length;
-
 // Simulate a little network latency so loading states are visible.
 const delay = <T>(value: T): Promise<T> =>
-  new Promise(resolve => setTimeout(() => resolve(value), 180));
+  new Promise(resolve => setTimeout(() => resolve(value), 120));
+
+// ── Shared-store sync ─────────────────────────────────────────────────────────
+// pull(): refresh local cache from the shared store (what another agent wrote).
+// push(): publish the local cache so other agents/browsers pick it up.
+// The very first pull seeds the shared store so all clients start identical.
+
+let seeded = false;
+
+async function pull(): Promise<void> {
+  const [remoteLoads, remoteDrivers] = await Promise.all([
+    fetchDoc<Load[]>('loads'),
+    fetchDoc<Driver[]>('drivers'),
+  ]);
+
+  if (Array.isArray(remoteLoads)) loads = remoteLoads;
+  if (Array.isArray(remoteDrivers)) drivers = remoteDrivers;
+
+  // Store is empty (fresh server / first run) → publish our seed once.
+  if (!seeded && !Array.isArray(remoteLoads) && !Array.isArray(remoteDrivers)) {
+    seeded = true;
+    await push();
+  }
+  seeded = true;
+}
+
+async function push(): Promise<void> {
+  await Promise.all([saveDoc('loads', loads), saveDoc('drivers', drivers)]);
+}
+
+// Next numeric id for a prefix, derived from current data so concurrent agents
+// don't collide on `LD-1001` / `DR-001`.
+function nextNum(items: { id: string }[], base: number): number {
+  const max = items.reduce((m, it) => {
+    const n = parseInt(String(it.id).replace(/\D/g, ''), 10);
+    return Number.isNaN(n) ? m : Math.max(m, n);
+  }, base);
+  return max + 1;
+}
 
 export const mockBackend = {
   async fetchLoads(): Promise<Load[]> {
-    return delay(loads.map(l => ({ ...l })));
+    await pull();
+    return loads.map(l => ({ ...l }));
   },
 
   async createLoad(input: CreateLoadInput): Promise<Load> {
-    loadSeq += 1;
+    await pull();
     const newLoad: Load = {
-      id: `LD-${loadSeq}`,
+      id: `LD-${nextNum(loads, 1000)}`,
       source: input.source,
       destination: input.destination,
       pickupDate: input.pickupDate,
@@ -52,29 +92,35 @@ export const mockBackend = {
       amountVisible: true,
     };
     loads = [newLoad, ...loads];
-    return delay({ ...newLoad });
+    await push();
+    return { ...newLoad };
   },
 
   async updateLoadPricing(id: string, patch: LoadPricingPatch): Promise<Load> {
+    await pull();
     loads = loads.map(l => (l.id === id ? { ...l, ...patch } : l));
-    return delay({ ...(loads.find(l => l.id === id)!) });
+    await push();
+    return { ...(loads.find(l => l.id === id)!) };
   },
 
   async cancelLoad(id: string): Promise<Load> {
+    await pull();
     loads = loads.map(l => (l.id === id ? { ...l, status: 'cancelled' as const, assignedDriver: undefined } : l));
-    return delay({ ...(loads.find(l => l.id === id)!) });
+    await push();
+    return { ...(loads.find(l => l.id === id)!) };
   },
 
   async fetchDrivers(): Promise<Driver[]> {
-    return delay(drivers.map(d => ({ ...d })));
+    await pull();
+    return drivers.map(d => ({ ...d }));
   },
 
   async createDriver(input: CreateDriverInput): Promise<Driver> {
-    driverSeq += 1;
+    await pull();
     const docOf = (k: 'license' | 'insurance' | 'registration' | 'aadhar') =>
       input.documents?.[k] ? ('pending' as const) : ('missing' as const);
     const newDriver: Driver = {
-      id: `DR-${String(driverSeq).padStart(3, '0')}`,
+      id: `DR-${String(nextNum(drivers, 0)).padStart(3, '0')}`,
       name: input.name,
       phone: input.phone,
       email: '',
@@ -93,10 +139,12 @@ export const mockBackend = {
       documentUrls: { ...input.documents },
     };
     drivers = [newDriver, ...drivers];
-    return delay({ ...newDriver });
+    await push();
+    return { ...newDriver };
   },
 
   async verifyDriver(id: string, status: 'verified' | 'rejected' = 'verified'): Promise<Driver> {
+    await pull();
     if (status === 'verified') {
       const d = drivers.find(x => x.id === id);
       const docs = d?.documentsStatus;
@@ -107,7 +155,8 @@ export const mockBackend = {
     }
     const mapped: Driver['status'] = status === 'verified' ? 'approved' : 'rejected';
     drivers = drivers.map(d => (d.id === id ? { ...d, status: mapped } : d));
-    return delay({ ...(drivers.find(d => d.id === id)!) });
+    await push();
+    return { ...(drivers.find(d => d.id === id)!) };
   },
 
   async verifyDocument(
@@ -115,10 +164,12 @@ export const mockBackend = {
     kind: 'license' | 'insurance' | 'registration' | 'aadhar',
     status: 'verified' | 'rejected' = 'verified',
   ): Promise<Driver> {
+    await pull();
     drivers = drivers.map(d =>
       d.id === id ? { ...d, documentsStatus: { ...d.documentsStatus, [kind]: status } } : d
     );
-    return delay({ ...(drivers.find(d => d.id === id)!) });
+    await push();
+    return { ...(drivers.find(d => d.id === id)!) };
   },
 
   async fetchBids(loadId: string): Promise<Bid[]> {
@@ -126,8 +177,9 @@ export const mockBackend = {
   },
 
   async fetchCandidates(loadId: string): Promise<CandidatesResult> {
+    await pull();
     const load = loads.find(l => l.id === loadId);
-    if (!load) return delay({ loadId, assignedDriverId: null, candidates: [] });
+    if (!load) return { loadId, assignedDriverId: null, candidates: [] };
     // Every driver who raised a hand / quoted for this load.
     const bidByDriver = new Map(bids.filter(b => b.loadId === loadId).map(b => [b.driverId, b]));
     const candidates = drivers
@@ -151,36 +203,46 @@ export const mockBackend = {
         };
       })
       .sort((a, b) => b.score - a.score);
-    return delay({ loadId, assignedDriverId: load.assignedDriver ?? null, candidates });
+    return { loadId, assignedDriverId: load.assignedDriver ?? null, candidates };
   },
 
-  async assignDriver(loadId: string, driverId: string, _viaQuote = false): Promise<void> {
+  async assignDriver(loadId: string, driverId: string, _viaQuote = false, assignedBy?: { id: string; name: string }): Promise<void> {
+    await pull();
+    const at = new Date().toISOString();
     loads = loads.map(l =>
-      l.id === loadId ? { ...l, assignedDriver: driverId, status: 'in_transit' as const } : l
+      l.id === loadId
+        ? { ...l, assignedDriver: driverId, status: 'in_transit' as const, assignedById: assignedBy?.id, assignedByName: assignedBy?.name, assignedAt: at }
+        : l
     );
-    return delay(undefined);
+    await push();
   },
 
   async unassignLoad(loadId: string): Promise<void> {
+    await pull();
     loads = loads.map(l =>
-      l.id === loadId ? { ...l, assignedDriver: undefined, status: 'active' as const } : l
+      l.id === loadId ? { ...l, assignedDriver: undefined, status: 'active' as const, assignedById: undefined, assignedByName: undefined, assignedAt: undefined } : l
     );
-    return delay(undefined);
+    await push();
   },
 
-  async reassignDriver(loadId: string, driverId: string, _viaQuote = false): Promise<void> {
+  async reassignDriver(loadId: string, driverId: string, _viaQuote = false, assignedBy?: { id: string; name: string }): Promise<void> {
+    await pull();
+    const at = new Date().toISOString();
     loads = loads.map(l =>
-      l.id === loadId ? { ...l, assignedDriver: driverId, status: 'in_transit' as const } : l
+      l.id === loadId
+        ? { ...l, assignedDriver: driverId, status: 'in_transit' as const, assignedById: assignedBy?.id, assignedByName: assignedBy?.name, assignedAt: at }
+        : l
     );
-    return delay(undefined);
+    await push();
   },
 
   async moveDriverToLoad(driverId: string, fromLoadId: string, toLoadId: string): Promise<void> {
+    await pull();
     loads = loads.map(l => {
       if (l.id === fromLoadId) return { ...l, assignedDriver: undefined, status: 'active' as const };
       if (l.id === toLoadId) return { ...l, assignedDriver: driverId, status: 'in_transit' as const };
       return l;
     });
-    return delay(undefined);
+    await push();
   },
 };
