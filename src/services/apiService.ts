@@ -18,6 +18,8 @@ export interface CreateLoadInput {
   region: string;
   budget: number;       // computed total (₹)
   notes?: string;
+  handling?: string;    // fragile / special handling instruction
+  truckLength?: string; // required truck body length (feet)
 }
 
 // ─── Pricing worksheet patch ──────────────────────────────────────────────────

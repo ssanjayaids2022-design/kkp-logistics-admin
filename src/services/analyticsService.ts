@@ -212,7 +212,7 @@ export async function fetchLoadData(): Promise<LoadData> {
     statusDist: [
       { status: 'Completed', count: 682, color: '#10B981' },
       { status: 'In Transit', count: 48, color: '#0B4C8C' },
-      { status: 'Pending', count: 72, color: '#F59E0B' },
+      { status: 'Active', count: 72, color: '#F59E0B' },
       { status: 'Cancelled', count: 24, color: '#EF4444' },
       { status: 'Delayed', count: 16, color: '#8B5CF6' },
     ],

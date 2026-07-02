@@ -679,3 +679,33 @@ h6 {
   color: #2DD4BF !important;
 }
 
+/* ── Toast messages (antd message): consistent alignment & spacing ── */
+.ant-message-notice-wrapper {
+  padding-bottom: 10px;
+}
+.ant-message-notice-content {
+  padding: 11px 18px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.14);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.ant-message-custom-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+/* Use the flex gap for icon spacing instead of the default right margin,
+   and vertically centre the icon with the text. */
+.ant-message-custom-content > .anticon {
+  margin: 0;
+  top: 0;
+  font-size: 17px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+

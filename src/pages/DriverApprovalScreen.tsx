@@ -398,6 +398,8 @@ export default function DriverApprovalScreen() {
             trendUp={false}
             icon={<ClockCircleOutlined />}
             color="#F4811F"
+            active={statusFilter === 'pending_approval'}
+            onClick={() => setStatusFilter(statusFilter === 'pending_approval' ? null : 'pending_approval')}
           />
         </Col>
         <Col xs={12} md={6}>
@@ -408,6 +410,8 @@ export default function DriverApprovalScreen() {
             trendUp
             icon={<CheckCircleOutlined />}
             color="#12B76A"
+            active={statusFilter === 'approved'}
+            onClick={() => setStatusFilter(statusFilter === 'approved' ? null : 'approved')}
           />
         </Col>
         <Col xs={12} md={6}>
@@ -418,6 +422,8 @@ export default function DriverApprovalScreen() {
             trendUp={false}
             icon={<CloseCircleOutlined />}
             color="#F04438"
+            active={statusFilter === 'rejected'}
+            onClick={() => setStatusFilter(statusFilter === 'rejected' ? null : 'rejected')}
           />
         </Col>
         <Col xs={12} md={6}>
@@ -428,6 +434,8 @@ export default function DriverApprovalScreen() {
             trendUp
             icon={<TeamOutlined />}
             color="#0B4C8C"
+            active={statusFilter === null}
+            onClick={() => setStatusFilter(null)}
           />
         </Col>
       </Row>

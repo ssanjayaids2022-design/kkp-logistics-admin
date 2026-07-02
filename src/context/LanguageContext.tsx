@@ -109,6 +109,7 @@ const translations = {
   'postLoad.selectSource': { en: 'Select pickup city', ta: 'பிக்கப் நகரை தேர்வுசெய்க' },
   'postLoad.selectDest': { en: 'Select delivery city', ta: 'டெலிவரி நகரை தேர்வுசெய்க' },
   'postLoad.selectVehicle': { en: 'Select vehicle type', ta: 'வாகன வகையை தேர்வுசெய்க' },
+  'postLoad.success': { en: 'Load posted successfully', ta: 'சுமை வெற்றிகரமாக பதிவு செய்யப்பட்டது' },
 
   // Bids
   'bids.title': { en: 'Bid Comparison', ta: 'ஏல ஒப்பீடு' },

@@ -1,6 +1,6 @@
 // ─── Status Enums ────────────────────────────────────────────────────────────
 
-export type LoadStatus = 'pending' | 'active' | 'in_transit' | 'delivered' | 'completed' | 'cancelled' | 'delayed';
+export type LoadStatus = 'active' | 'in_transit' | 'delivered' | 'completed' | 'cancelled' | 'delayed';
 export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'processing';
 export type DriverStatus = 'pending_approval' | 'approved' | 'rejected' | 'suspended';
 export type BidStatus = 'pending' | 'accepted' | 'rejected';
@@ -21,6 +21,8 @@ export interface Load {
   postedDate: string;
   assignedDriver?: string;
   notes?: string;
+  handling?: string;       // fragile / special handling instruction
+  truckLength?: string;    // required truck body length (feet)
   distance?: string;
   priceType?: 'fixed' | 'per_ton';
   ratePerTon?: number;

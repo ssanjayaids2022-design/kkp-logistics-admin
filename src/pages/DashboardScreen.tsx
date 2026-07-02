@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Row, Col, Card as AntdCard, Timeline, Button, Typography, Space, Tag, DatePicker, Select, Tooltip, Badge, Statistic, Modal, Table, InputNumber, Switch, message } from 'antd';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { Row, Col, Card as AntdCard, Timeline, Button, Typography, Space, Tag, DatePicker, Select, Tooltip, Badge, Statistic, Modal, Table, InputNumber, Switch, message, Input } from 'antd';
 const Card = AntdCard as any;
 import {
   ShoppingOutlined,
@@ -9,6 +9,7 @@ import {
   PlusOutlined,
   RightOutlined,
   CheckCircleOutlined,
+  SearchOutlined,
   SyncOutlined,
   FileAddOutlined,
   CloseCircleOutlined,
@@ -79,12 +80,13 @@ function useCountUp(target: number, duration = 1200) {
 }
 
 // Individual animated KPI card
-function AnimatedKPICard({ title, numericValue, displayValue, trend, trendUp, icon, color, onClick }: {
+function AnimatedKPICard({ title, numericValue, displayValue, trend, trendUp, icon, color, onClick, active = false }: {
   title: string; numericValue: number; displayValue: string; trend: string;
-  trendUp: boolean; icon: React.ReactNode; color: string; onClick: () => void;
+  trendUp: boolean; icon: React.ReactNode; color: string; onClick: () => void; active?: boolean;
 }) {
   const animated = useCountUp(numericValue);
   const [hovered, setHovered] = useState(false);
+  const lit = hovered || active;
 
   return (
     <div
@@ -94,12 +96,12 @@ function AnimatedKPICard({ title, numericValue, displayValue, trend, trendUp, ic
       style={{
         background: '#FFFFFF',
         borderRadius: 12,
-        border: `1px solid ${hovered ? color : '#E4E7EC'}`,
+        border: `1px solid ${lit ? color : '#E4E7EC'}`,
         padding: '16px',
         cursor: 'pointer',
         transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
         transform: hovered ? 'translateY(-4px)' : 'none',
-        boxShadow: hovered ? `0 12px 24px rgba(0,0,0,0.1), 0 0 0 1px ${color}22` : '0 1px 3px rgba(16,24,40,0.08)',
+        boxShadow: active ? `0 0 0 2px ${color}33` : hovered ? `0 12px 24px rgba(0,0,0,0.1), 0 0 0 1px ${color}22` : '0 1px 3px rgba(16,24,40,0.08)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -139,6 +141,19 @@ export default function DashboardScreen() {
 
   type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
   const [pricing, setPricing] = useState<Record<string, Draft>>({});
+
+  // Loads Ledger filters (mirror the Load page).
+  const [ledgerSearch, setLedgerSearch] = useState('');
+  const [ledgerVehicle, setLedgerVehicle] = useState<string | null>(null);
+  const [ledgerRoute, setLedgerRoute] = useState<string | null>(null);
+  const [ledgerStatus, setLedgerStatus] = useState<string | null>(null);
+  const ledgerRef = useRef<HTMLDivElement>(null);
+
+  // KPI card click → filter the Loads Ledger to that status and scroll to it.
+  const showLedgerFor = (status: string) => {
+    setLedgerStatus(prev => (prev === status ? null : status));
+    setTimeout(() => ledgerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
 
   // Seed the editable draft for any load we haven't tracked yet (don't clobber in-progress edits).
   useEffect(() => {
@@ -190,6 +205,10 @@ export default function DashboardScreen() {
       render: (id: string) => <span className="kkp-text-gold kkp-weight-700">{id}</span> },
     { title: 'Route', key: 'route', width: 180,
       render: (_: any, l: Load) => <span className="kkp-text-dark">{l.source} → {l.destination}</span> },
+    { title: 'Handling', key: 'handling', width: 160,
+      render: (_: any, l: Load) => l.handling
+        ? <Tag color={/fragile|hazmat|perishable|liquid|temperature/i.test(l.handling) ? 'red' : 'blue'} style={{ borderRadius: 6, whiteSpace: 'normal', margin: 0 }}>{l.handling}</Tag>
+        : <span className="kkp-text-drab">—</span> },
     { title: 'Assignment', key: 'assigned', width: 110,
       render: (_: any, l: Load) => (
         <Tag color={isAssigned(l) ? 'success' : 'default'} style={{ borderRadius: 6, fontWeight: 600 }}>
@@ -300,9 +319,9 @@ export default function DashboardScreen() {
     // Category-specific KPIs now live on their feature pages (Loads / Drivers /
     // Payments). The dashboard keeps a small cross-cutting operations overview.
     const list = [
-      { title: 'Active Trips', numericValue: metrics.trips, displayValue: String(metrics.trips), trend: '+4% from yesterday', trendUp: true, icon: <CarOutlined />, color: '#0B4C8C',
+      { title: 'Active Trips', numericValue: metrics.trips, displayValue: String(metrics.trips), trend: '+4% from yesterday', trendUp: true, icon: <CarOutlined />, color: '#0B4C8C', filterStatus: 'in_transit',
         drill: [{ label: 'On-Time', value: `${metrics.trips - 2}`, color: '#10B981' }, { label: 'Delayed', value: '2', color: '#F4811F' }, { label: 'Critical', value: '0', color: '#EF4444' }], visible: true },
-      { title: 'Pending POD Reviews', numericValue: metrics.pod, displayValue: String(metrics.pod), trend: '+3 from yesterday', trendUp: false, icon: <AuditOutlined />, color: '#0B4C8C',
+      { title: 'Pending POD Reviews', numericValue: metrics.pod, displayValue: String(metrics.pod), trend: '+3 from yesterday', trendUp: false, icon: <AuditOutlined />, color: '#0B4C8C', filterStatus: 'delivered',
         drill: [{ label: 'Under Review', value: String(metrics.pod), color: '#0B4C8C' }, { label: 'Cleared Today', value: '7', color: '#10B981' }], visible: !isLoadAdmin && !isTechAdmin },
     ];
     return list.filter(c => c.visible);
@@ -349,6 +368,24 @@ export default function DashboardScreen() {
     ];
     return list.filter(a => a.visible);
   }, [can, t]);
+
+  // Loads Ledger filter options + filtered rows (same behaviour as the Load page).
+  const ledgerVehicleOptions = Array.from(new Set(loads.map(l => l.vehicleType))).map(v => ({ value: v, label: v }));
+  const ledgerRouteOptions = Array.from(new Set(loads.map(l => `${l.source} → ${l.destination}`))).map(r => ({ value: r, label: r }));
+  const filteredLedger = loads.filter(l => {
+    const q = ledgerSearch.toLowerCase();
+    const matchSearch = !ledgerSearch ||
+      l.id.toLowerCase().includes(q) ||
+      l.source.toLowerCase().includes(q) ||
+      l.destination.toLowerCase().includes(q) ||
+      `${l.source} → ${l.destination}`.toLowerCase().includes(q) ||
+      (l.assignedDriver || '').toLowerCase().includes(q) ||
+      l.vehicleType.toLowerCase().includes(q);
+    const matchVehicle = !ledgerVehicle || l.vehicleType === ledgerVehicle;
+    const matchRoute = !ledgerRoute || `${l.source} → ${l.destination}` === ledgerRoute;
+    const matchStatus = !ledgerStatus || l.status === ledgerStatus;
+    return matchSearch && matchVehicle && matchRoute && matchStatus;
+  });
 
   return (
     <div>
@@ -414,14 +451,18 @@ export default function DashboardScreen() {
           📊 Live Operations Metrics <Text style={{ fontSize: 11, color: '#98A2B3', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}> — Click any card for details</Text>
         </Text>
         <Row gutter={[16, 16]}>
-          {kpiCards.map((card) => (
-            <Col key={card.title} xs={12} sm={12} md={8} lg={6} xl={4} style={{ minWidth: 160 }}>
-              <AnimatedKPICard
-                {...card}
-                onClick={() => openDrillDown(card.title, card.drill)}
-              />
-            </Col>
-          ))}
+          {kpiCards.map((card) => {
+            const fs = (card as any).filterStatus as string | undefined;
+            return (
+              <Col key={card.title} xs={12} sm={12} md={8} lg={6} xl={4} style={{ minWidth: 160 }}>
+                <AnimatedKPICard
+                  {...card}
+                  active={!!fs && ledgerStatus === fs}
+                  onClick={() => (fs ? showLedgerFor(fs) : openDrillDown(card.title, card.drill))}
+                />
+              </Col>
+            );
+          })}
         </Row>
       </div>
 
@@ -445,6 +486,7 @@ export default function DashboardScreen() {
       )}
 
       {/* Loads Ledger Table */}
+      <div ref={ledgerRef} style={{ scrollMarginTop: 80 }} />
       <Card
         className="kkp-card kkp-mb-28"
         title={
@@ -457,14 +499,49 @@ export default function DashboardScreen() {
         }
         styles={{ body: { padding: '8px 8px 0' } }}
       >
+        {/* Filters — same set as the Load page */}
+        <Row gutter={[8, 8]} style={{ padding: '4px 8px 12px' }}>
+          <Col xs={24} sm={12} md={7}>
+            <Input
+              placeholder="Search load, route, driver…"
+              prefix={<SearchOutlined className="kkp-text-drab" />}
+              value={ledgerSearch}
+              onChange={(e) => setLedgerSearch(e.target.value)}
+              allowClear
+            />
+          </Col>
+          <Col xs={12} sm={6} md={5}>
+            <Select placeholder="Vehicle" value={ledgerVehicle} onChange={setLedgerVehicle} allowClear showSearch style={{ width: '100%' }} options={ledgerVehicleOptions} />
+          </Col>
+          <Col xs={12} sm={6} md={6}>
+            <Select placeholder="Route" value={ledgerRoute} onChange={setLedgerRoute} allowClear showSearch style={{ width: '100%' }} options={ledgerRouteOptions} />
+          </Col>
+          <Col xs={12} sm={6} md={6}>
+            <Select
+              placeholder="Status"
+              value={ledgerStatus}
+              onChange={setLedgerStatus}
+              allowClear
+              style={{ width: '100%' }}
+              options={[
+                { value: 'active', label: 'Active' },
+                { value: 'in_transit', label: 'In Transit' },
+                { value: 'delivered', label: 'Delivered' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'delayed', label: 'Delayed' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
+          </Col>
+        </Row>
         <Table
           columns={loadLedgerColumns}
-          dataSource={loads}
+          dataSource={filteredLedger}
           rowKey="id"
           size="middle"
           pagination={{ pageSize: 6, showSizeChanger: false }}
           scroll={{ x: 1000 }}
-          locale={{ emptyText: 'No loads yet.' }}
+          locale={{ emptyText: 'No loads match these filters.' }}
         />
       </Card>
 

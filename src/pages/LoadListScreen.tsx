@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Input, Select, DatePicker, Button, Space, Dropdown, Row, Col, Modal, message, Checkbox, Typography, Alert } from 'antd';
+import { Table, Input, Select, DatePicker, Button, Space, Dropdown, Row, Col, Modal, message, Checkbox, Typography, Alert, InputNumber, Switch, Tag } from 'antd';
 import {
   SearchOutlined,
   ThunderboltOutlined,
@@ -31,7 +31,8 @@ const { Text } = Typography;
 export default function LoadListScreen() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [vehicleFilter, setVehicleFilter] = useState<string | null>(null);
+  const [routeFilter, setRouteFilter] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -39,9 +40,62 @@ export default function LoadListScreen() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { loads, cancelLoad, loading, error, refresh } = useLoads();
+  const { loads, cancelLoad, loading, error, refresh, updatePricing } = useLoads();
   const { t } = useLanguage();
   const { can } = useAuth();
+
+  const canPricing = can('loads.pricing.edit');
+
+  // ── Pricing worksheet (mirrors the dashboard Loads Ledger) ──
+  type Draft = { quotedAmount: number; kkpPrice: number; bidAmount: number | null; offeredAmount: number; amountVisible: boolean };
+  const [pricing, setPricing] = useState<Record<string, Draft>>({});
+  React.useEffect(() => {
+    setPricing(prev => {
+      const next = { ...prev };
+      let changed = false;
+      for (const l of loads) {
+        if (!next[l.id]) {
+          next[l.id] = {
+            quotedAmount: l.quotedAmount ?? l.budget ?? 0,
+            kkpPrice: l.kkpPrice ?? l.budget ?? 0,
+            bidAmount: l.bidAmount ?? null,
+            offeredAmount: l.offeredAmount ?? 0,
+            amountVisible: l.amountVisible !== false,
+          };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [loads]);
+
+  const money = (n?: number | null) => (n || n === 0 ? `₹${Number(n).toLocaleString('en-IN')}` : '—');
+  const isAssigned = (l: Load) => !!l.assignedDriver;
+  const getP = (id: string): Draft => pricing[id] || { quotedAmount: 0, kkpPrice: 0, bidAmount: null, offeredAmount: 0, amountVisible: true };
+  const setField = (id: string, field: keyof Draft, value: any) =>
+    setPricing(prev => ({ ...prev, [id]: { ...getP(id), [field]: value } }));
+  const saveField = (id: string, patch: Partial<Draft>) =>
+    updatePricing(id, patch).catch(() => message.error('Failed to save pricing'));
+
+  const editNum = (id: string, field: 'kkpPrice' | 'offeredAmount') => (
+    <InputNumber
+      size="small"
+      value={getP(id)[field] as number}
+      min={0}
+      controls={false}
+      disabled={!canPricing}
+      style={{ width: 96 }}
+      prefix="₹"
+      formatter={(v: any) => (v == null || v === '' ? '' : `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','))}
+      parser={(v: any) => (v ? Number(String(v).replace(/[^\d]/g, '')) : 0) as any}
+      onChange={(v) => setField(id, field, v == null ? 0 : Number(v))}
+      onBlur={() => saveField(id, { [field]: getP(id)[field] })}
+    />
+  );
+
+  // Distinct vehicle types & routes present in the current loads (for filters).
+  const vehicleOptions = Array.from(new Set(loads.map(l => l.vehicleType))).map(v => ({ value: v, label: v }));
+  const routeOptions = Array.from(new Set(loads.map(l => `${l.source} → ${l.destination}`))).map(r => ({ value: r, label: r }));
 
   React.useEffect(() => {
     if (location.state?.searchText !== undefined) {
@@ -64,7 +118,9 @@ export default function LoadListScreen() {
       (load.assignedDriver || '').toLowerCase().includes(q) ||
       load.vehicleType.toLowerCase().includes(q);
     const matchStatus = !statusFilter || load.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchVehicle = !vehicleFilter || load.vehicleType === vehicleFilter;
+    const matchRoute = !routeFilter || `${load.source} → ${load.destination}` === routeFilter;
+    return matchSearch && matchStatus && matchVehicle && matchRoute;
   });
 
   const columns: ColumnsType<Load> = [
@@ -85,6 +141,15 @@ export default function LoadListScreen() {
           <div className="kkp-text-drab" style={{ fontSize: 12 }}>→ {record.destination}</div>
         </div>
       ),
+    },
+    {
+      title: 'Handling',
+      key: 'handling',
+      width: 160,
+      responsive: ['lg'],
+      render: (_, record) => record.handling
+        ? <Tag color={/fragile|hazmat|perishable|liquid|temperature/i.test(record.handling) ? 'red' : 'blue'} style={{ borderRadius: 6, whiteSpace: 'normal', margin: 0 }}>{record.handling}</Tag>
+        : <span className="kkp-text-drab">—</span>,
     },
     {
       title: t('loads.vehicle'),
@@ -108,12 +173,59 @@ export default function LoadListScreen() {
       ),
     },
     {
+      title: 'Assignment',
+      key: 'assigned',
+      width: 120,
+      render: (_, record) => (
+        <Tag color={isAssigned(record) ? 'success' : 'default'} style={{ borderRadius: 6, fontWeight: 600 }}>
+          {isAssigned(record) ? 'Assigned' : 'Unassigned'}
+        </Tag>
+      ),
+    },
+    {
       title: t('loads.weight'),
       dataIndex: 'weight',
       key: 'weight',
       width: 100,
       responsive: ['lg'],
       render: (w) => <span className="kkp-text-dark kkp-weight-600">{w > 100 ? (w / 1000).toFixed(1) : w}T</span>,
+    },
+    {
+      title: 'Quoted',
+      key: 'quoted',
+      width: 120,
+      render: (_, record) => {
+        // Quoted shows the running total = base quote + driver's offered extra.
+        const p = getP(record.id);
+        const total = (p.quotedAmount || 0) + (p.offeredAmount || 0);
+        return (
+          <InputNumber
+            size="small"
+            value={total}
+            min={0}
+            controls={false}
+            disabled={!canPricing}
+            style={{ width: 96 }}
+            prefix="₹"
+            formatter={(v: any) => (v == null || v === '' ? '' : `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','))}
+            parser={(v: any) => (v ? Number(String(v).replace(/[^\d]/g, '')) : 0) as any}
+            onChange={(v) => setField(record.id, 'quotedAmount', Math.max(0, (Number(v) || 0) - (p.offeredAmount || 0)))}
+            onBlur={() => saveField(record.id, { quotedAmount: getP(record.id).quotedAmount })}
+          />
+        );
+      },
+    },
+    { title: 'KKP Price', key: 'kkp', width: 120, render: (_, record) => editNum(record.id, 'kkpPrice') },
+    { title: 'Offered', key: 'offered', width: 120, render: (_, record) => editNum(record.id, 'offeredAmount') },
+    {
+      title: 'Final',
+      key: 'final',
+      width: 110,
+      align: 'right',
+      render: (_, record) => {
+        const p = getP(record.id);
+        return <span className="kkp-weight-800" style={{ color: '#12B76A' }}>{money((p.quotedAmount || 0) + (p.offeredAmount || 0))}</span>;
+      },
     },
     {
       title: t('loads.status'),
@@ -145,6 +257,20 @@ export default function LoadListScreen() {
           </div>
         );
       },
+    },
+    {
+      title: 'Show to driver',
+      key: 'visible',
+      width: 120,
+      align: 'center',
+      render: (_, record) => (
+        <Switch
+          size="small"
+          checked={getP(record.id).amountVisible}
+          disabled={!canPricing}
+          onChange={(c) => { setField(record.id, 'amountVisible', c); saveField(record.id, { amountVisible: c }); }}
+        />
+      ),
     },
     {
       title: t('loads.date'),
@@ -211,9 +337,16 @@ export default function LoadListScreen() {
       { header: 'Source', value: l => l.source },
       { header: 'Destination', value: l => l.destination },
       { header: 'Vehicle', value: l => l.vehicleType },
+      { header: 'Handling', value: l => l.handling || '' },
       { header: 'Weight', value: l => l.weight },
       { header: 'Status', value: l => l.status },
       { header: 'Driver', value: l => l.assignedDriver || '' },
+      { header: 'Assignment', value: l => (l.assignedDriver ? 'Assigned' : 'Unassigned') },
+      { header: 'Quoted', value: l => (getP(l.id).quotedAmount || 0) + (getP(l.id).offeredAmount || 0) },
+      { header: 'KKP Price', value: l => getP(l.id).kkpPrice },
+      { header: 'Offered', value: l => getP(l.id).offeredAmount },
+      { header: 'Final', value: l => (getP(l.id).quotedAmount || 0) + (getP(l.id).offeredAmount || 0) },
+      { header: 'Show to driver', value: l => (getP(l.id).amountVisible ? 'Yes' : 'No') },
       { header: 'Budget', value: l => l.budget },
       { header: 'Posted', value: l => l.postedDate },
     ], filteredLoads);
@@ -260,11 +393,13 @@ export default function LoadListScreen() {
         <Col xs={12} md={8}>
           <KPICard
             title="Available Loads"
-            value={loads.filter(l => l.status === 'active' || l.status === 'pending').length}
+            value={loads.filter(l => l.status === 'active').length}
             trend="Open for matching"
             trendUp
             icon={<ShoppingOutlined />}
             color="#FFC20E"
+            active={statusFilter === 'active'}
+            onClick={() => setStatusFilter(statusFilter === 'active' ? null : 'active')}
           />
         </Col>
         <Col xs={12} md={8}>
@@ -275,6 +410,8 @@ export default function LoadListScreen() {
             trendUp
             icon={<CarOutlined />}
             color="#0B4C8C"
+            active={statusFilter === 'in_transit'}
+            onClick={() => setStatusFilter(statusFilter === 'in_transit' ? null : 'in_transit')}
           />
         </Col>
         <Col xs={12} md={8}>
@@ -285,6 +422,8 @@ export default function LoadListScreen() {
             trendUp
             icon={<CheckCircleOutlined />}
             color="#12B76A"
+            active={statusFilter === 'delivered'}
+            onClick={() => setStatusFilter(statusFilter === 'delivered' ? null : 'delivered')}
           />
         </Col>
       </Row>
@@ -302,7 +441,7 @@ export default function LoadListScreen() {
 
       {/* Filters */}
       <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
-        <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} md={6}>
           <Input
             placeholder={t('loads.searchPlaceholder')}
             prefix={<SearchOutlined className="kkp-text-drab" />}
@@ -315,13 +454,34 @@ export default function LoadListScreen() {
         </Col>
         <Col xs={12} sm={6} md={4}>
           <Select
+            placeholder="Vehicle"
+            value={vehicleFilter}
+            onChange={setVehicleFilter}
+            style={{ width: '100%', borderRadius: 10 }}
+            allowClear
+            showSearch
+            options={vehicleOptions}
+          />
+        </Col>
+        <Col xs={12} sm={6} md={5}>
+          <Select
+            placeholder="Route"
+            value={routeFilter}
+            onChange={setRouteFilter}
+            style={{ width: '100%', borderRadius: 10 }}
+            allowClear
+            showSearch
+            options={routeOptions}
+          />
+        </Col>
+        <Col xs={12} sm={6} md={4}>
+          <Select
             placeholder={t('common.filter')}
             value={statusFilter}
             onChange={setStatusFilter}
             style={{ width: '100%', borderRadius: 10 }}
             allowClear
             options={[
-              { value: 'pending', label: t('status.pending') },
               { value: 'active', label: t('status.active') },
               { value: 'in_transit', label: t('status.inTransit') },
               { value: 'delivered', label: t('status.delivered') },
@@ -331,17 +491,13 @@ export default function LoadListScreen() {
             ]}
           />
         </Col>
-        <Col xs={12} sm={6} md={4}>
+        <Col xs={12} sm={6} md={5}>
           <RangePicker style={{ width: '100%', borderRadius: 10 }} />
         </Col>
       </Row>
 
       {/* Table */}
       <Table
-        rowSelection={{
-          selectedRowKeys,
-          onChange: setSelectedRowKeys,
-        }}
         columns={columns}
         dataSource={filteredLoads}
         rowKey="id"
@@ -353,7 +509,7 @@ export default function LoadListScreen() {
           showTotal: (total) => <span className="kkp-text-drab">{t('common.total')} {total}</span>,
         }}
         style={{ borderRadius: 14, overflow: 'hidden' }}
-        scroll={{ x: 800 }}
+        scroll={{ x: 2000 }}
       />
 
       {/* Secure Deletion Modal */}

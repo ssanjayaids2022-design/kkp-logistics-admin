@@ -15,6 +15,9 @@ import 'leaflet/dist/leaflet.css';
 import { Modal, Button } from 'antd';
 import { useAuth } from '../context/AuthContext';
 
+// Truck body lengths (feet) offered on the load form.
+const TRUCK_LENGTHS = ['14 ft', '17 ft', '19 ft', '20 ft', '22 ft', '24 ft', '32 ft'];
+
 // Handling / special-instruction options shown as a dropdown on the load form.
 const HANDLING_OPTIONS = [
   'Standard (no special handling)',
@@ -59,9 +62,8 @@ export default function LoadPostingScreen() {
     // suffix (cities look like "Chennai, TN"). Fall back to the raw source.
     const region = (values.source.split(',').pop() || values.source).trim();
 
-    // Fold the handling instruction into the notes so it travels with the load.
-    const handling = values.handling && values.handling !== HANDLING_OPTIONS[0] ? values.handling : '';
-    const notes = [handling ? `Handling: ${handling}` : '', values.notes].filter(Boolean).join(' — ');
+    // Special handling is its own field (shown on the dashboard); default = none.
+    const handling = values.handling && values.handling !== HANDLING_OPTIONS[0] ? values.handling : undefined;
 
     try {
       const newLoad = await addLoad({
@@ -72,7 +74,9 @@ export default function LoadPostingScreen() {
         weight: values.weight,
         region,
         budget: calculatedBudget,
-        notes,
+        notes: values.notes,
+        handling,
+        truckLength: values.truckLength,
       });
 
       addNotification({
@@ -81,7 +85,7 @@ export default function LoadPostingScreen() {
         type: 'load',
       });
 
-      message.success(t('postLoad.success') || `Load posted successfully! ID: ${newLoad.id}`);
+      message.success(`${t('postLoad.success')} — ${newLoad.id}`);
       form.resetFields();
 
       // Navigate to load list to show it "need to show"
@@ -370,6 +374,19 @@ export default function LoadPostingScreen() {
                 <Select
                   options={HANDLING_OPTIONS.map(o => ({ value: o, label: o }))}
                   style={{ borderRadius: 8 }}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="truckLength"
+                label={<span className="kkp-text-muted kkp-weight-600">Truck Length (ft)</span>}
+              >
+                <Select
+                  placeholder="Select truck length"
+                  options={TRUCK_LENGTHS.map(o => ({ value: o, label: o }))}
+                  style={{ borderRadius: 8 }}
+                  allowClear
                 />
               </Form.Item>
             </Col>

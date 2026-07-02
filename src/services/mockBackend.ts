@@ -43,6 +43,8 @@ export const mockBackend = {
       bidsCount: 0,
       postedDate: new Date().toLocaleDateString('en-GB'),
       notes: input.notes,
+      handling: input.handling,
+      truckLength: input.truckLength,
       quotedAmount: input.budget,
       kkpPrice: input.budget,
       bidAmount: null,

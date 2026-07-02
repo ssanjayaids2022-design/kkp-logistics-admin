@@ -6,7 +6,6 @@ type AnyStatus = LoadStatus | PaymentStatus | DriverStatus | BidStatus | Documen
 
 const statusConfig: Record<string, { color: string; label: string }> = {
   // Load statuses
-  pending: { color: 'gold', label: 'Pending' },
   active: { color: 'blue', label: 'Active' },
   in_transit: { color: 'processing', label: 'In Transit' },
   delivered: { color: 'success', label: 'Delivered' },
@@ -14,7 +13,8 @@ const statusConfig: Record<string, { color: string; label: string }> = {
   cancelled: { color: 'default', label: 'Cancelled' },
   delayed: { color: 'warning', label: 'Delayed' },
 
-  // Payment statuses
+  // Payment / bid / document statuses
+  pending: { color: 'gold', label: 'Pending' },   // shared by payments, bids, documents (not loads)
   paid: { color: 'success', label: 'Paid' },
   overdue: { color: 'error', label: 'Overdue' },
   processing: { color: 'processing', label: 'Processing' },

@@ -10,15 +10,21 @@ interface KPICardProps {
   trendUp?: boolean;
   icon: ReactNode;
   color?: string;
+  onClick?: () => void;
+  active?: boolean;
 }
 
-export default function KPICard({ title, value, trend, trendUp = true, icon, color = '#0B4C8C' }: KPICardProps) {
+export default function KPICard({ title, value, trend, trendUp = true, icon, color = '#0B4C8C', onClick, active = false }: KPICardProps) {
   return (
     <Card
       hoverable
+      onClick={onClick}
       className="kkp-card-dynamic"
       style={{
         ['--kkp-color' as any]: color,
+        cursor: onClick ? 'pointer' : undefined,
+        borderColor: active ? color : undefined,
+        boxShadow: active ? `0 0 0 2px ${color}33` : undefined,
       }}
       styles={{
         body: { padding: 24, position: 'relative', zIndex: 1 },
