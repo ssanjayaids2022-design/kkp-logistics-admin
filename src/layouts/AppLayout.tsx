@@ -46,6 +46,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/payments': 'Payments Ledger',
   '/profile': 'Profile',
   '/settings': 'Settings',
+  '/notifications': 'Notifications',
   '/analytics/predictive': 'Predictive Analytics',
   '/analytics/financial': 'Financial Analytics',
   '/analytics/loads': 'Load Analytics',
@@ -399,6 +400,11 @@ export default function AppLayout() {
         )}
         locale={{ emptyText: <div className="kkp-p-24" style={{ textAlign: 'center', color: '#5A4F42' }}>{t('notifications.noNew')}</div> }}
       />
+      <div className="kkp-p-12" style={{ borderTop: '1px solid #F2F4F7', textAlign: 'center', background: '#F9FAFB' }}>
+        <Button type="link" size="small" style={{ color: '#0B4C8C', fontSize: 12, fontWeight: 700 }} onClick={() => navigate('/notifications')}>
+          Show more
+        </Button>
+      </div>
     </div>
   );
 

@@ -81,7 +81,7 @@ export default function LoadPostingScreen() {
 
       addNotification({
         title: 'Load Posted Successfully',
-        message: `Load ${newLoad.id} (${newLoad.source} → ${newLoad.destination}) is now live for bidding.`,
+        message: `Load ${newLoad.id} (${newLoad.source} → ${newLoad.destination}) is now live — drivers can raise their hands to be matched.`,
         type: 'load',
       });
 

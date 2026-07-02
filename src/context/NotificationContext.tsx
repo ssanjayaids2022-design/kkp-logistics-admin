@@ -20,15 +20,29 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 const initialNotifications: Notification[] = [
-  { id: 'N-001', title: 'New Bid Received', message: 'Suresh Kumar placed a bid of ₹42,000 on LD-1001', time: '5 min ago', read: false, type: 'bid' },
-  { id: 'N-002', title: 'Load Delivered', message: 'LD-1005 has been delivered successfully at Jaipur', time: '1 hr ago', read: false, type: 'load' },
-  { id: 'N-003', title: 'Payment Overdue', message: 'Payment of ₹38,000 for LD-1010 is overdue', time: '2 hrs ago', read: false, type: 'payment' },
+  { id: 'N-001', title: 'Driver Raised Hand', message: 'Suresh Kumar raised their hand for LD-1001 — ready to match.', time: '5 min ago', read: false, type: 'driver' },
+  { id: 'N-002', title: 'Load Delivered', message: 'LD-1005 has been delivered successfully at Jaipur.', time: '1 hr ago', read: false, type: 'load' },
+  { id: 'N-003', title: 'Payment Overdue', message: 'Payment of ₹38,000 for LD-1010 is overdue.', time: '2 hrs ago', read: false, type: 'payment' },
 ];
+
+// One-time cleanup: rewrite the old "bidding" wording in any notifications that
+// were already saved to localStorage before the terminology change.
+const migrate = (list: Notification[]): Notification[] =>
+  list.map(n => ({
+    ...n,
+    title: n.title === 'New Bid Received' ? 'Driver Raised Hand' : n.title,
+    message: n.message
+      .replace(/is now live for bidding\.?/i, 'is now live — drivers can raise their hands to be matched.')
+      .replace(/\bfor bidding\b/gi, 'for driver matching')
+      .replace(/\bbidding\b/gi, 'matching')
+      .replace(/placed a bid of (\S+) on (\S+)/i, 'raised their hand for $2'),
+    type: n.type === 'bid' ? 'driver' : n.type,
+  }));
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>(() => {
     const saved = localStorage.getItem('kkp_notifications');
-    return saved ? JSON.parse(saved) : initialNotifications;
+    return migrate(saved ? JSON.parse(saved) : initialNotifications);
   });
 
   useEffect(() => {

@@ -97,7 +97,7 @@ const translations = {
 
   // Load Posting Form
   'postLoad.title': { en: 'Post New Load', ta: 'புதிய சுமை பதிவு' },
-  'postLoad.subtitle': { en: 'Fill in the shipment details to publish a new load for bidding', ta: 'ஏலத்திற்கான புதிய சுமையை வெளியிட விவரங்களை நிரப்பவும்' },
+  'postLoad.subtitle': { en: 'Fill in the shipment details to publish a new load for driver matching', ta: 'ஓட்டுநர் பொருத்தத்திற்கான புதிய சுமையை வெளியிட விவரங்களை நிரப்பவும்' },
   'postLoad.source': { en: 'Source Location', ta: 'புறப்படும் இடம்' },
   'postLoad.destination': { en: 'Destination', ta: 'சேரும் இடம்' },
   'postLoad.pickupDate': { en: 'Pickup Date', ta: 'பிக்கப் தேதி' },
@@ -105,7 +105,7 @@ const translations = {
   'postLoad.weight': { en: 'Weight (ton)', ta: 'எடை (டன்)' },
   'postLoad.budget': { en: 'Budget (₹)', ta: 'பட்ஜெட் (₹)' },
   'postLoad.notes': { en: 'Additional Notes', ta: 'கூடுதல் குறிப்புகள்' },
-  'postLoad.submit': { en: 'Post Load for Bidding', ta: 'ஏலத்திற்கு சுமை பதிவு செய்' },
+  'postLoad.submit': { en: 'Post Load', ta: 'சுமை பதிவு செய்' },
   'postLoad.selectSource': { en: 'Select pickup city', ta: 'பிக்கப் நகரை தேர்வுசெய்க' },
   'postLoad.selectDest': { en: 'Select delivery city', ta: 'டெலிவரி நகரை தேர்வுசெய்க' },
   'postLoad.selectVehicle': { en: 'Select vehicle type', ta: 'வாகன வகையை தேர்வுசெய்க' },

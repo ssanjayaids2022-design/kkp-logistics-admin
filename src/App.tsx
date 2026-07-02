@@ -17,6 +17,7 @@ import DriverApprovalScreen from './pages/DriverApprovalScreen';
 import PaymentListScreen from './pages/PaymentListScreen';
 import ProfileScreen from './pages/ProfileScreen';
 import SettingsScreen from './pages/SettingsScreen';
+import NotificationsScreen from './pages/NotificationsScreen';
 import { LoadsProvider } from './context/LoadsContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -89,6 +90,7 @@ function AppRoutes() {
         <Route path="payments" element={<PermissionRoute perm="payments.view"><PaymentListScreen /></PermissionRoute>} />
         <Route path="profile" element={<ProfileScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
+        <Route path="notifications" element={<NotificationsScreen />} />
 
         {/* ── Analytics Routes (lazy loaded) ── */}
         <Route path="analytics/predictive" element={<PermissionRoute perm="analytics.financial"><Suspense fallback={<PageLoader />}><PredictiveAnalytics /></Suspense></PermissionRoute>} />

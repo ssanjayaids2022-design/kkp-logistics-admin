@@ -528,7 +528,7 @@ export default function LoadListScreen() {
       >
         <div style={{ marginTop: 12, marginBottom: 16 }}>
           <Text style={{ display: 'block', marginBottom: 12, fontSize: 13 }}>
-            You are about to permanently delete load <Text strong>{loadToDelete?.id}</Text> (<Text strong>{loadToDelete?.source} → {loadToDelete?.destination}</Text>). This action cannot be undone and will automatically cancel any active trips or driver bidding assignments associated with this load.
+            You are about to permanently delete load <Text strong>{loadToDelete?.id}</Text> (<Text strong>{loadToDelete?.source} → {loadToDelete?.destination}</Text>). This action cannot be undone and will automatically cancel any active trips or driver assignments associated with this load.
           </Text>
 
           <div style={{ marginBottom: 16 }}>
