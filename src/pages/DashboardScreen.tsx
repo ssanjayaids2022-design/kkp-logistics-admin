@@ -542,6 +542,16 @@ export default function DashboardScreen() {
           pagination={{ pageSize: 6, showSizeChanger: false }}
           scroll={{ x: 1000 }}
           locale={{ emptyText: 'No loads match these filters.' }}
+          onRow={(record) => ({
+            style: { cursor: 'pointer' },
+            onClick: (e) => {
+              // Let the inline pricing inputs / switch handle their own clicks;
+              // clicking anywhere else on the row opens that load on the Load page.
+              const el = e.target as HTMLElement;
+              if (el.closest('input, button, .ant-input-number, .ant-switch, .ant-select')) return;
+              navigate('/loads', { state: { searchText: record.id } });
+            },
+          })}
         />
       </Card>
 
